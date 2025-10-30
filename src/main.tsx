@@ -8,3 +8,12 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <ScripturePlan />
   </React.StrictMode>,
 )
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/service-worker.js')
+      .then(() => console.log('Service Worker registered'))
+      .catch((err) => console.error('Service Worker registration failed:', err));
+  });
+}
