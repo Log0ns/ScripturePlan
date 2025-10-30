@@ -1,15 +1,12 @@
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open('scripture-plan-v1').then((cache) => {
-      return cache.addAll(['/']);
-    })
-  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
-  );
+  // Just fetch; don't cache aggressively
+  event.respondWith(fetch(event.request).catch(() => caches.match('/')));
 });
