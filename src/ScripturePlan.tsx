@@ -267,22 +267,34 @@ export default function ScriptureReader() {
                 onTouchStart={(e) => {
                   setTouchMoved(false);
                   e.target.dataset.startTime = e.timeStamp;
-                  handleTouchStart(icon);
+                  const timer = setTimeout(() => handleLongPress(icon), 500);
+                  setLongPressTimer(timer);
                 }}
                 onTouchMove={() => {
-                  setTouchMoved(true); // mark that finger has moved
-                }}
-                onTouchEnd={(e) => {
-                  e.preventDefault(); // prevents Safari's synthetic click
-                  if (!touchMoved) {
-                    handleTouchEnd(icon, e); // only tap if no movement
+                  setTouchMoved(true);
+                  if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    setLongPressTimer(null);
                   }
                 }}
-                onMouseDown={(e) => {
-                  if (e.pointerType !== 'touch') handleTouchStart(icon);
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    setLongPressTimer(null);
+                  }
+                  if (!touchMoved) handleTap(icon); // only tap if not moved
                 }}
-                onMouseUp={(e) => {
-                  if (e.pointerType !== 'touch') handleTouchEnd(icon, e);
+                onMouseDown={() => {
+                  const timer = setTimeout(() => handleLongPress(icon), 500);
+                  setLongPressTimer(timer);
+                }}
+                onMouseUp={() => {
+                  if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    setLongPressTimer(null);
+                    handleTap(icon); // normal click = advance chapter
+                  }
                 }}
                 onMouseLeave={() => {
                   if (longPressTimer) {
