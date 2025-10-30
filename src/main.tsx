@@ -14,6 +14,9 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker
       .register('/service-worker.js')
       .then(() => console.log('Service Worker registered'))
-      .catch((err) => console.error('Service Worker registration failed:', err));
+      .catch((err) => {
+        // Log, but don’t break the app
+        console.warn('Service Worker registration failed:', err);
+      });
   });
 }
