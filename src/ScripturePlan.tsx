@@ -127,11 +127,11 @@ export default function ScriptureReader() {
     }
   }, [icons]);
 
-  const loadData = async () => {
+  const loadData = () => {
     try {
-      const result = await window.storage.get('scripture-icons');
-      if (result && result.value) {
-        setIcons(JSON.parse(result.value));
+      const data = localStorage.getItem('scripture-icons');
+      if (data) {
+        setIcons(JSON.parse(data));
       } else {
         setIcons(DEFAULT_ICONS);
       }
@@ -139,10 +139,10 @@ export default function ScriptureReader() {
       setIcons(DEFAULT_ICONS);
     }
   };
-
-  const saveData = async () => {
+  
+  const saveData = () => {
     try {
-      await window.storage.set('scripture-icons', JSON.stringify(icons));
+      localStorage.setItem('scripture-icons', JSON.stringify(icons));
     } catch (error) {
       console.error('Failed to save data:', error);
     }
@@ -267,12 +267,16 @@ export default function ScriptureReader() {
                   e.target.dataset.startTime = e.timeStamp;
                   handleTouchStart(icon);
                 }}
-                onTouchEnd={(e) => handleTouchEnd(icon, e)}
-                onMouseDown={(e) => {
-                  e.target.dataset.startTime = e.timeStamp;
-                  handleTouchStart(icon);
+                onTouchEnd={(e) => {
+                  e.preventDefault(); // Prevents the synthetic click event
+                  handleTouchEnd(icon, e);
                 }}
-                onMouseUp={(e) => handleTouchEnd(icon, e)}
+                onMouseDown={(e) => {
+                  if (e.pointerType !== 'touch') handleTouchStart(icon);
+                }}
+                onMouseUp={(e) => {
+                  if (e.pointerType !== 'touch') handleTouchEnd(icon, e);
+                }}
                 onMouseLeave={() => {
                   if (longPressTimer) {
                     clearTimeout(longPressTimer);
