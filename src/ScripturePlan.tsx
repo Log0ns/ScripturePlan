@@ -112,6 +112,7 @@ export default function ScriptureReader() {
   const [showSettings, setShowSettings] = useState(false);
   const [longPressTimer, setLongPressTimer] = useState(null);
   const [timeOfDay, setTimeOfDay] = useState(getTimeOfDay());
+  const [touchMoved, setTouchMoved] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -264,12 +265,18 @@ export default function ScriptureReader() {
                 key={icon.id}
                 className={`aspect-square ${getIconColor(timeOfDay)} backdrop-blur-md rounded-2xl shadow-xl flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-all`}
                 onTouchStart={(e) => {
+                  setTouchMoved(false);
                   e.target.dataset.startTime = e.timeStamp;
                   handleTouchStart(icon);
                 }}
+                onTouchMove={() => {
+                  setTouchMoved(true); // mark that finger has moved
+                }}
                 onTouchEnd={(e) => {
-                  e.preventDefault(); // Prevents the synthetic click event
-                  handleTouchEnd(icon, e);
+                  e.preventDefault(); // prevents Safari's synthetic click
+                  if (!touchMoved) {
+                    handleTouchEnd(icon, e); // only tap if no movement
+                  }
                 }}
                 onMouseDown={(e) => {
                   if (e.pointerType !== 'touch') handleTouchStart(icon);
