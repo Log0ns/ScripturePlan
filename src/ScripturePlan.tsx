@@ -91,7 +91,7 @@ const getBackgroundGradient = (timeOfDay) => {
     morning: 'from-rose-200 via-amber-100 to-yellow-100',
     afternoon: 'from-cyan-200 via-teal-100 to-emerald-100',
     evening: 'from-orange-200 via-rose-200 to-purple-200',
-    night: 'from-indigo-300 via-blue-300 to-cyan-300'
+    night: 'from-indigo-700 via-blue-600 to-cyan-800'
   };
   return gradients[timeOfDay];
 };
