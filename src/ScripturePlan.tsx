@@ -374,6 +374,26 @@ export default function ScriptureReader() {
               </button>
             </div>
 
+            <div className="flex items-center mt-3">
+              <input
+                type="checkbox"
+                id="readToday"
+                className="mr-2 h-4 w-4 accent-yellow-500"
+                checked={selectedIcon.readToday || false}
+                onChange={(e) => {
+                  const updated = icons.map((i) =>
+                    i.id === selectedIcon.id ? { ...i, readToday: e.target.checked } : i
+                  );
+                  setIcons(updated);
+                  localStorage.setItem('icons', JSON.stringify(updated));
+                  setSelectedIcon({ ...selectedIcon, readToday: e.target.checked });
+                }}
+              />
+              <label htmlFor="readToday" className="text-gray-700 text-sm">
+                Marked as read today
+              </label>
+            </div>
+
             {/* Current Position */}
             <div className="mb-6">
               <label className="text-sm font-medium text-slate-600 mb-3 block">Current Position</label>
