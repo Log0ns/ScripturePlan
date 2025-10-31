@@ -192,7 +192,7 @@ export default function ScriptureReader() {
   const handleTap = (icon) => {
     const updated = advanceChapter(icon);
     const updatedIcons = icons.map(i =>
-      i.id === icon.id ? { ...i, readToday: true } : i
+      i.id === icon.id ? { ...updated, readToday: true } : i
     );
     setIcons(updatedIcons);
     localStorage.setItem('icons', JSON.stringify(updatedIcons));
