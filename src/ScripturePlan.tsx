@@ -74,8 +74,24 @@ const BIBLE_BOOKS = [
 ];
 
 const DEFAULT_ICONS = [
-  { id: 1, bookIndex: 0, chapter: 1, startBook: 0, startChapter: 1, endBook: null, endChapter: null },
-  { id: 2, bookIndex: 39, chapter: 1, startBook: 39, startChapter: 1, endBook: null, endChapter: null }
+  { 
+    id: 1, 
+    bookIndex: 0,          // Genesis
+    chapter: 1, 
+    startBook: 0,          // Genesis
+    startChapter: 1, 
+    endBook: 38,           // Malachi
+    endChapter: 4
+  },
+  { 
+    id: 2, 
+    bookIndex: 39,         // Matthew
+    chapter: 1, 
+    startBook: 39,         // Matthew
+    startChapter: 1, 
+    endBook: 65,           // Revelation
+    endChapter: 22
+  }
 ];
 
 const getTimeOfDay = () => {
