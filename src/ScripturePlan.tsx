@@ -374,7 +374,7 @@ export default function ScriptureReader() {
               </button>
             </div>
 
-            <div className="flex items-center mt-3">
+            <div className="flex items-center mb-3">
               <input
                 type="checkbox"
                 id="readToday"
