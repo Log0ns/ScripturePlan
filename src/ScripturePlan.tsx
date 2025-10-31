@@ -74,24 +74,8 @@ const BIBLE_BOOKS = [
 ];
 
 const DEFAULT_ICONS = [
-  { 
-    id: 1, 
-    bookIndex: 0,          // Genesis
-    chapter: 1, 
-    startBook: 0,          // Genesis
-    startChapter: 1, 
-    endBook: 38,           // Malachi
-    endChapter: 4
-  },
-  { 
-    id: 2, 
-    bookIndex: 39,         // Matthew
-    chapter: 1, 
-    startBook: 39,         // Matthew
-    startChapter: 1, 
-    endBook: 65,           // Revelation
-    endChapter: 22
-  }
+  { id: 1, bookIndex: 0, chapter: 1, startBook: 0, startChapter: 1, endBook: 38, endChapter: 4, readToday: false },
+  { id: 2, bookIndex: 39, chapter: 1, startBook: 39, startChapter: 1, endBook: 65, endChapter: 22, readToday: false }
 ];
 
 const getTimeOfDay = () => {
@@ -130,6 +114,19 @@ export default function ScriptureReader() {
   const [timeOfDay, setTimeOfDay] = useState(getTimeOfDay());
   const [touchMoved, setTouchMoved] = useState(false);
   const [longPressTriggered, setLongPressTriggered] = useState(false);
+  const [lastOpenedDate, setLastOpenedDate] = useState(() => localStorage.getItem('lastOpenedDate') || '');
+
+  useEffect(() => {
+    const today = new Date().toDateString();
+    if (lastOpenedDate !== today) {
+      // reset all icons for a new day
+      const resetIcons = icons.map(icon => ({ ...icon, readToday: false }));
+      setIcons(resetIcons);
+      localStorage.setItem('icons', JSON.stringify(resetIcons));
+      localStorage.setItem('lastOpenedDate', today);
+      setLastOpenedDate(today);
+    }
+  }, []); // only runs once
 
   useEffect(() => {
     loadData();
@@ -194,7 +191,11 @@ export default function ScriptureReader() {
 
   const handleTap = (icon) => {
     const updated = advanceChapter(icon);
-    setIcons(icons.map(i => i.id === icon.id ? updated : i));
+    const updatedIcons = icons.map(i =>
+      i.id === icon.id ? { ...i, readToday: true } : i
+    );
+    setIcons(updatedIcons);
+    localStorage.setItem('icons', JSON.stringify(updatedIcons));
   };
 
   const handleLongPress = (icon) => {
@@ -280,7 +281,9 @@ export default function ScriptureReader() {
             {icons.map(icon => (
               <div
                 key={icon.id}
-                className={`aspect-square ${getIconColor(timeOfDay)} backdrop-blur-md rounded-2xl shadow-xl flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-all`}
+                className={`aspect-square ${getIconColor(timeOfDay)} backdrop-blur-md rounded-2xl flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-all
+                  ${icon.readToday ? 'ring-4 ring-yellow-400 shadow-yellow-400/50' : 'shadow-xl'}
+                `}
                 onTouchStart={(e) => {
                   setTouchMoved(false);
                   setLongPressTriggered(false);
