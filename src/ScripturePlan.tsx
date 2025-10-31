@@ -113,6 +113,7 @@ export default function ScriptureReader() {
   const [longPressTimer, setLongPressTimer] = useState(null);
   const [timeOfDay, setTimeOfDay] = useState(getTimeOfDay());
   const [touchMoved, setTouchMoved] = useState(false);
+  const [longPressTriggered, setLongPressTriggered] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -266,8 +267,12 @@ export default function ScriptureReader() {
                 className={`aspect-square ${getIconColor(timeOfDay)} backdrop-blur-md rounded-2xl shadow-xl flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-all`}
                 onTouchStart={(e) => {
                   setTouchMoved(false);
+                  setLongPressTriggered(false);
                   e.target.dataset.startTime = e.timeStamp;
-                  const timer = setTimeout(() => handleLongPress(icon), 500);
+                  const timer = setTimeout(() => {
+                    setLongPressTriggered(true);
+                    handleLongPress(icon);
+                  }, 500);
                   setLongPressTimer(timer);
                 }}
                 onTouchMove={() => {
@@ -283,18 +288,23 @@ export default function ScriptureReader() {
                     clearTimeout(longPressTimer);
                     setLongPressTimer(null);
                   }
-                  if (!touchMoved) handleTap(icon); // only tap if not moved
+                  // only tap if it wasn't a long-press and no scroll
+                  if (!touchMoved && !longPressTriggered) handleTap(icon);
                 }}
                 onMouseDown={() => {
-                  const timer = setTimeout(() => handleLongPress(icon), 500);
+                  setLongPressTriggered(false);
+                  const timer = setTimeout(() => {
+                    setLongPressTriggered(true);
+                    handleLongPress(icon);
+                  }, 500);
                   setLongPressTimer(timer);
                 }}
                 onMouseUp={() => {
                   if (longPressTimer) {
                     clearTimeout(longPressTimer);
                     setLongPressTimer(null);
-                    handleTap(icon); // normal click = advance chapter
                   }
+                  if (!longPressTriggered) handleTap(icon);
                 }}
                 onMouseLeave={() => {
                   if (longPressTimer) {
