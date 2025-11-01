@@ -118,15 +118,19 @@ export default function ScriptureReader() {
 
   useEffect(() => {
     const today = new Date().toDateString();
-    if (lastOpenedDate !== today) {
-      // reset all icons for a new day
+    const storedDate = localStorage.getItem('lastOpenedDate');
+  
+    if (!storedDate || storedDate !== today) {
       const resetIcons = icons.map(icon => ({ ...icon, readToday: false }));
       setIcons(resetIcons);
       localStorage.setItem('icons', JSON.stringify(resetIcons));
       localStorage.setItem('lastOpenedDate', today);
       setLastOpenedDate(today);
+    } else {
+      // keep the current state but sync the date state variable
+      setLastOpenedDate(storedDate);
     }
-  }, []); // only runs once
+  }, []); // runs once, but now compares storedDate
 
   useEffect(() => {
     loadData();
