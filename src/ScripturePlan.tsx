@@ -81,8 +81,8 @@ const DEFAULT_ICONS = [
 const getTimeOfDay = () => {
   const hour = new Date().getHours();
   if (hour >= 5 && hour < 12) return 'morning';
-  if (hour >= 12 && hour < 17) return 'afternoon';
-  if (hour >= 17 && hour < 20) return 'evening';
+  if (hour >= 12 && hour < 16) return 'afternoon';
+  if (hour >= 16 && hour < 20) return 'evening';
   return 'night';
 };
 
@@ -91,7 +91,7 @@ const getBackgroundGradient = (timeOfDay) => {
     morning: 'from-rose-200 via-amber-100 to-yellow-100',
     afternoon: 'from-cyan-200 via-teal-100 to-emerald-100',
     evening: 'from-orange-200 via-rose-200 to-purple-200',
-    night: 'from-indigo-700 via-blue-600 to-cyan-800'
+    night: 'from-indigo-700 via-blue-600 to-blue-950'
   };
   return gradients[timeOfDay];
 };
@@ -115,6 +115,8 @@ export default function ScriptureReader() {
   const [touchMoved, setTouchMoved] = useState(false);
   const [longPressTriggered, setLongPressTriggered] = useState(false);
   const [lastOpenedDate, setLastOpenedDate] = useState(() => localStorage.getItem('lastOpenedDate') || '');
+  const [showGlobalSettings, setShowGlobalSettings] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState('Default');
 
   useEffect(() => {
     const today = new Date().toDateString();
@@ -158,6 +160,50 @@ export default function ScriptureReader() {
       setIcons(DEFAULT_ICONS);
     }
   };
+
+  function applyPlan(plan: string) {
+    let newIcons = [];
+  
+    if (plan === 'Chronological') {
+      newIcons = [
+        { id: 1, bookIndex: 0, chapter: 1, startBook: 0, startChapter: 1, endBook: 65, endChapter: 22 }
+      ];
+    } else if (plan === 'Mcheyne') {
+      newIcons = [
+        { id: 1, bookIndex: 0, chapter: 1, startBook: 0, startChapter: 1, endBook: 14, endChapter: 28 },  // Genesis–2 Chronicles
+        { id: 2, bookIndex: 15, chapter: 1, startBook: 15, startChapter: 1, endBook: 38, endChapter: 4 }, // Ezra–Malachi
+        { id: 3, bookIndex: 39, chapter: 1, startBook: 39, startChapter: 1, endBook: 43, endChapter: 28 }, // Matthew–Acts
+        { id: 4, bookIndex: 44, chapter: 1, startBook: 44, startChapter: 1, endBook: 65, endChapter: 22 }  // Romans–Revelation
+      ];
+    } else if (plan === 'Parallel') {
+      newIcons = [
+        { id: 1, bookIndex: 0, chapter: 1, startBook: 0, startChapter: 1, endBook: 38, endChapter: 4 },
+        { id: 2, bookIndex: 39, chapter: 1, startBook: 39, startChapter: 1, endBook: 65, endChapter: 22 }
+      ];
+    } else if (plan === 'Custom') {
+      newIcons = [
+        { id: 1, bookIndex: 39, chapter: 1, startBook: 39, startChapter: 1, endBook: 42, endChapter: 21 },  // Matthew–John
+        { id: 2, bookIndex: 0, chapter: 1, startBook: 0, startChapter: 1, endBook: 4, endChapter: 34 },     // Genesis–Deut
+        { id: 3, bookIndex: 44, chapter: 1, startBook: 44, startChapter: 1, endBook: 50, endChapter: 4 },   // Romans–Col
+        { id: 4, bookIndex: 51, chapter: 1, startBook: 51, startChapter: 1, endBook: 65, endChapter: 22 },  // 1 Thess–Rev
+        { id: 5, bookIndex: 17, chapter: 1, startBook: 17, startChapter: 1, endBook: 21, endChapter: 8 },   // Job–Song
+        { id: 6, bookIndex: 18, chapter: 1, startBook: 18, startChapter: 1, endBook: 18, endChapter: 150 }, // Psalms
+        { id: 7, bookIndex: 19, chapter: 1, startBook: 19, startChapter: 1, endBook: 19, endChapter: 31 },  // Proverbs
+        { id: 8, bookIndex: 5, chapter: 1, startBook: 5, startChapter: 1, endBook: 16, endChapter: 10 },    // Joshua–Esther
+        { id: 9, bookIndex: 22, chapter: 1, startBook: 22, startChapter: 1, endBook: 38, endChapter: 4 },   // Isaiah–Malachi
+        { id: 10, bookIndex: 43, chapter: 1, startBook: 43, startChapter: 1, endBook: 43, endChapter: 28 }  // Acts
+      ];
+    } else {
+      // Default
+      newIcons = [
+        { id: 1, bookIndex: 0, chapter: 1, startBook: 0, startChapter: 1, endBook: 38, endChapter: 4 },
+        { id: 2, bookIndex: 39, chapter: 1, startBook: 39, startChapter: 1, endBook: 65, endChapter: 22 }
+      ];
+    }
+  
+    setIcons(newIcons);
+    localStorage.setItem('icons', JSON.stringify(newIcons));
+  }
   
   const saveData = () => {
     try {
@@ -281,6 +327,12 @@ export default function ScriptureReader() {
       {/* Icons Grid */}
       <div className="flex-1 px-8 py-20 relative z-10 flex items-center justify-center">
         <div className="w-full max-w-md">
+          <button
+            className="absolute top-3 right-3 bg-gray-200 text-gray-800 px-3 py-1 rounded-lg shadow hover:bg-gray-300"
+            onClick={() => setShowGlobalSettings(true)}
+          >
+            ⚙️
+          </button>
           <div className="grid grid-cols-2 gap-6">
             {icons.map(icon => (
               <div
@@ -363,6 +415,60 @@ export default function ScriptureReader() {
           </div>
         </div>
       </div>
+
+      {/* Global Settings Modal */}
+      {showGlobalSettings && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-4 w-80 shadow-lg">
+            <h2 className="text-lg font-semibold mb-3 text-gray-800">Select Reading Plan</h2>
+            
+            <select
+              className="w-full border rounded p-2 mb-4 text-gray-800"
+              value={selectedPlan}
+              onChange={(e) => setSelectedPlan(e.target.value)}
+            >
+              <option value="Default">Default (Genesis–Matthew)</option>
+              <option value="Chronological">Chronological Bible</option>
+              <option value="Mcheyne">M’Cheyne Plan</option>
+              <option value="Parallel">Old + New Testament Parallel</option>
+              <option value="Custom">Custom Plan</option>
+            </select>
+      
+            {selectedPlan === 'Custom' && (
+              <div className="text-sm text-gray-700 max-h-48 overflow-y-auto border-t pt-2 space-y-1">
+                <p>Range 1: Matthew–John</p>
+                <p>Range 2: Genesis–Deuteronomy</p>
+                <p>Range 3: Romans–Colossians</p>
+                <p>Range 4: 1 Thess–Revelation</p>
+                <p>Range 5: Job–Song of Solomon</p>
+                <p>Range 6: Psalms</p>
+                <p>Range 7: Proverbs</p>
+                <p>Range 8: Joshua–Esther</p>
+                <p>Range 9: Isaiah–Malachi</p>
+                <p>Range 10: Acts</p>
+              </div>
+            )}
+      
+            <div className="flex justify-end mt-4 space-x-2">
+              <button
+                className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400"
+                onClick={() => setShowGlobalSettings(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                onClick={() => {
+                  applyPlan(selectedPlan);
+                  setShowGlobalSettings(false);
+                }}
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Settings Modal */}
       {showSettings && selectedIcon && (
