@@ -427,11 +427,11 @@ export default function ScriptureReader() {
               value={selectedPlan}
               onChange={(e) => setSelectedPlan(e.target.value)}
             >
-              <option value="Default">Default (Genesis–Matthew)</option>
+              <option value="Default">Default</option>
               <option value="Chronological">Chronological Bible</option>
-              <option value="Mcheyne">M’Cheyne Plan</option>
               <option value="Parallel">Old + New Testament Parallel</option>
-              <option value="Custom">Custom Plan</option>
+              <option value="Mcheyne">2OT-2NT</option>
+              <option value="Custom">Professor Grant Horner Bible-Reading System</option>
             </select>
       
             {selectedPlan === 'Custom' && (
