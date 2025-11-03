@@ -118,21 +118,59 @@ export default function ScriptureReader() {
   const [showGlobalSettings, setShowGlobalSettings] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState('Default');
 
-  useEffect(() => {
+  const resetDailyIfNeeded = useCallback(() => {
     const today = new Date().toDateString();
     const storedDate = localStorage.getItem('lastOpenedDate');
   
     if (!storedDate || storedDate !== today) {
-      const resetIcons = icons.map(icon => ({ ...icon, readToday: false }));
-      setIcons(resetIcons);
-      localStorage.setItem('icons', JSON.stringify(resetIcons));
-      localStorage.setItem('lastOpenedDate', today);
-      setLastOpenedDate(today);
-    } else {
-      // keep the current state but sync the date state variable
-      setLastOpenedDate(storedDate);
+      setIcons(prev => {
+        const resetIcons = prev.map(icon => ({ ...icon, readToday: false }));
+        localStorage.setItem('icons', JSON.stringify(resetIcons));
+        localStorage.setItem('lastOpenedDate', today);
+        setLastOpenedDate(today);
+        console.log('Daily reset triggered');
+        return resetIcons;
+      });
     }
-  }, []); // runs once, but now compares storedDate
+  }, []);
+
+  useEffect(() => {
+    resetDailyIfNeeded();
+  }, []);
+  // useEffect(() => {
+  //   const today = new Date().toDateString();
+  //   const storedDate = localStorage.getItem('lastOpenedDate');
+  
+  //   if (!storedDate || storedDate !== today) {
+  //     const resetIcons = icons.map(icon => ({ ...icon, readToday: false }));
+  //     setIcons(resetIcons);
+  //     localStorage.setItem('icons', JSON.stringify(resetIcons));
+  //     localStorage.setItem('lastOpenedDate', today);
+  //     setLastOpenedDate(today);
+  //   } else {
+  //     // Keep the stored date synced
+  //     setLastOpenedDate(storedDate);
+  //   }
+  // }, []); // still runs once, but now compares the stored date each morning
+
+  useEffect(() => {
+    const interval = setInterval(resetDailyIfNeeded, 60000); // check every minute
+    return () => clearInterval(interval);
+  }, [icons]);
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     const today = new Date().toDateString();
+  //     if (today !== lastOpenedDate) {
+  //       const resetIcons = icons.map(icon => ({ ...icon, readToday: false }));
+  //       setIcons(resetIcons);
+  //       localStorage.setItem('icons', JSON.stringify(resetIcons));
+  //       localStorage.setItem('lastOpenedDate', today);
+  //       setLastOpenedDate(today);
+  //     }
+  //   }, 60000); // check every minute
+  
+  //   return () => clearInterval(interval);
+  // }, [icons, lastOpenedDate]);
 
   useEffect(() => {
     loadData();
