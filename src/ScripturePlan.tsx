@@ -533,7 +533,7 @@ export default function ScriptureReader() {
           showQuestions ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        <div className="p-6 space-y-12 pb-32"> {/* Added bottom padding so button doesn’t overlap */}
+        <div className="p-6 space-y-12 pb-8"> {/* Added bottom padding so button doesn’t overlap */}
           {questionList.map((q, i) => {
             const unlocked = i === 0 || answers[i - 1]; // Unlock logic
             if (!unlocked) return null;
@@ -581,7 +581,7 @@ export default function ScriptureReader() {
                       onClick={() => setShowQuestions(false)}
                       className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg shadow-md hover:bg-gray-300"
                     >
-                      ← Return
+                      ❌
                     </button>
                   </div>
                 </div>
@@ -638,7 +638,8 @@ export default function ScriptureReader() {
               >
                 Apply
               </button>
-              <button
+            </div>
+            <button
                 onClick={() => {
                   localStorage.removeItem('quizProgress');
                   setAnswers({});
@@ -647,7 +648,6 @@ export default function ScriptureReader() {
               >
                 Reset Questions
               </button>
-            </div>
           </div>
         </div>
       )}
