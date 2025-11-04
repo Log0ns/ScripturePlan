@@ -639,15 +639,17 @@ export default function ScriptureReader() {
                 Apply
               </button>
             </div>
-            <button
-                onClick={() => {
-                  localStorage.removeItem('quizProgress');
-                  setAnswers({});
-                }}
-                className="bg-red-500 text-white px-3 py-1 rounded mt-2"
-              >
-                Reset Questions
-              </button>
+            <div className="flex justify-end mt-4 space-x-2">
+              <button
+                  onClick={() => {
+                    localStorage.removeItem('quizProgress');
+                    setAnswers({});
+                  }}
+                  className="bg-red-500 text-white px-3 py-1 rounded mt-2"
+                >
+                  Reset Questions
+                </button>
+            </div>
           </div>
         </div>
       )}
