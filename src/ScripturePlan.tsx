@@ -428,14 +428,16 @@ export default function ScriptureReader() {
           <div className="flex-1 px-8 py-20 relative z-10 flex items-center justify-center">
             <div className="w-full max-w-md">
               <button
-                className="absolute top-3 right-3 bg-gray-200 text-gray-800 px-3 py-1 rounded-lg shadow hover:bg-gray-300"
-                onClick={() => setShowGlobalSettings(true)}
+                onClick={() => setShowSettings(true)}
+                className="bg-gray-800 p-3 rounded-full text-white shadow-md"
               >
                 ⚙️
               </button>
-              <button 
-                className="absolute top-6 right-3 bg-gray-200 text-gray-800 px-3 py-1 rounded-lg shadow hover:bg-gray-300"
-                onClick={() => setShowQuestions(true)}>❓
+              <button
+                onClick={() => setShowQuestions(true)}
+                className="bg-blue-700 p-3 rounded-full text-white shadow-md"
+              >
+                ❓
               </button>
               <div className="grid grid-cols-2 gap-6">
                 {icons.map(icon => (
