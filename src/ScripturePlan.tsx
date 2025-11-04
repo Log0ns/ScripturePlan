@@ -417,163 +417,161 @@ export default function ScriptureReader() {
              )`
            }} />
 
-      <div
-        className={`fixed top-0 left-0 w-full h-full transform transition-transform duration-700 ease-in-out ${
-          showQuestions ? '-translate-x-full' : 'translate-x-0'
-        }`}
-      >
-        {/* Main Scripture Screen */}
-        <div className="absolute top-0 left-0 w-full h-full">
-          {/* Icons Grid */}
-          <div className="flex-1 px-8 py-20 relative z-10 flex items-center justify-center">
-            <div className="w-full max-w-md">
+      {/* MAIN SCRIPTURE SCREEN */}
+      <div className="relative w-full h-full overflow-y-auto">
+        {/* Icons Grid */}
+        <div className="flex-1 px-8 py-20 relative z-10 flex items-center justify-center">
+          <div className="w-full max-w-md">
+            {/* ⚙️ and ❓ buttons fixed to bottom-right */}
+            <div className="fixed bottom-6 right-6 flex flex-col space-y-3 z-30">
               <button
-                className="absolute top-3 right-3 bg-gray-200 text-gray-800 px-3 py-1 rounded-lg shadow hover:bg-gray-300"
+                className="bg-gray-200 text-gray-800 px-3 py-1 rounded-lg shadow hover:bg-gray-300"
                 onClick={() => setShowGlobalSettings(true)}
               >
                 ⚙️
               </button>
               <button
-                className="absolute top-12 right-3 bg-gray-200 text-gray-800 px-3 py-1 rounded-lg shadow hover:bg-gray-300"
+                className="bg-gray-200 text-gray-800 px-3 py-1 rounded-lg shadow hover:bg-gray-300"
                 onClick={() => setShowQuestions(true)}
               >
                 ❓
               </button>
-              <div className="grid grid-cols-2 gap-6">
-                {icons.map(icon => (
-                  <div
-                    key={icon.id}
-                    className={`aspect-square ${getIconColor(timeOfDay)} backdrop-blur-md rounded-2xl flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-all
-                      ${icon.readToday ? 'ring-4 ring-yellow-400 shadow-yellow-400/50' : 'shadow-xl'}
-                    `}
-                    onTouchStart={(e) => {
-                      setTouchMoved(false);
-                      setLongPressTriggered(false);
-                      e.target.dataset.startTime = e.timeStamp;
-                      const timer = setTimeout(() => {
-                        setLongPressTriggered(true);
-                        handleLongPress(icon);
-                      }, 500);
-                      setLongPressTimer(timer);
-                    }}
-                    onTouchMove={() => {
-                      setTouchMoved(true);
-                      if (longPressTimer) {
-                        clearTimeout(longPressTimer);
-                        setLongPressTimer(null);
-                      }
-                    }}
-                    onTouchEnd={(e) => {
-                      e.preventDefault();
-                      if (longPressTimer) {
-                        clearTimeout(longPressTimer);
-                        setLongPressTimer(null);
-                      }
-                      // only tap if it wasn't a long-press and no scroll
-                      if (!touchMoved && !longPressTriggered) handleTap(icon);
-                    }}
-                    onMouseDown={() => {
-                      setLongPressTriggered(false);
-                      const timer = setTimeout(() => {
-                        setLongPressTriggered(true);
-                        handleLongPress(icon);
-                      }, 500);
-                      setLongPressTimer(timer);
-                    }}
-                    onMouseUp={() => {
-                      if (longPressTimer) {
-                        clearTimeout(longPressTimer);
-                        setLongPressTimer(null);
-                      }
-                      if (!longPressTriggered) handleTap(icon);
-                    }}
-                    onMouseLeave={() => {
-                      if (longPressTimer) {
-                        clearTimeout(longPressTimer);
-                        setLongPressTimer(null);
-                      }
-                    }}
-                  >
-                    <div className="text-center px-3">
-                      <div className="text-xs font-medium text-slate-600 mb-1 tracking-wide">
-                        {BIBLE_BOOKS[icon.bookIndex].name}
-                      </div>
-                      <div className="text-4xl font-light text-slate-700 mb-1">
-                        {icon.chapter}
-                      </div>
-                      {icon.endBook !== null && (
-                        <div className="text-xs text-slate-500 mt-2 leading-tight">
-                          {BIBLE_BOOKS[icon.startBook].name} {icon.startChapter} - {BIBLE_BOOKS[icon.endBook].name} {icon.endChapter}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                
-                {icons.length < 10 && (
-                  <button
-                    onClick={addIcon}
-                    className={`aspect-square ${getIconColor(timeOfDay)} backdrop-blur-md rounded-2xl shadow-xl flex items-center justify-center cursor-pointer hover:bg-opacity-95 active:scale-95 transition-all border-2 border-dashed border-white border-opacity-40`}
-                  >
-                    <Plus className="w-10 h-10 text-slate-400" />
-                  </button>
-                )}
-              </div>
             </div>
-          </div>
-        </div>
       
-        {/* QUESTIONS SCREEN */}
-        <div
-          className="absolute top-0 left-full w-full h-full overflow-y-auto text-white transition-transform duration-700 ease-in-out"
-          style={{ transform: showQuestions ? 'translateX(-100%)' : 'translateX(0)' }}
-        >
-          <div className="p-6 space-y-12">
-            {questionList.map((q, i) => {
-              const unlocked = i === 0 || answers[i - 1];
-              if (!unlocked) return null;
-              return (
+            <div className="grid grid-cols-2 gap-6">
+              {icons.map(icon => (
                 <div
-                  key={q.id}
-                  className={`relative h-[80vh] ${q.gradient} rounded-xl shadow-xl flex flex-col justify-center items-center text-center p-6`}
+                  key={icon.id}
+                  className={`aspect-square ${getIconColor(timeOfDay)} backdrop-blur-md rounded-2xl flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-all
+                    ${icon.readToday ? 'ring-4 ring-yellow-400 shadow-yellow-400/50' : 'shadow-xl'}
+                  `}
+                  onTouchStart={(e) => {
+                    setTouchMoved(false);
+                    setLongPressTriggered(false);
+                    e.target.dataset.startTime = e.timeStamp;
+                    const timer = setTimeout(() => {
+                      setLongPressTriggered(true);
+                      handleLongPress(icon);
+                    }, 500);
+                    setLongPressTimer(timer);
+                  }}
+                  onTouchMove={() => {
+                    setTouchMoved(true);
+                    if (longPressTimer) {
+                      clearTimeout(longPressTimer);
+                      setLongPressTimer(null);
+                    }
+                  }}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    if (longPressTimer) {
+                      clearTimeout(longPressTimer);
+                      setLongPressTimer(null);
+                    }
+                    if (!touchMoved && !longPressTriggered) handleTap(icon);
+                  }}
+                  onMouseDown={() => {
+                    setLongPressTriggered(false);
+                    const timer = setTimeout(() => {
+                      setLongPressTriggered(true);
+                      handleLongPress(icon);
+                    }, 500);
+                    setLongPressTimer(timer);
+                  }}
+                  onMouseUp={() => {
+                    if (longPressTimer) {
+                      clearTimeout(longPressTimer);
+                      setLongPressTimer(null);
+                    }
+                    if (!longPressTriggered) handleTap(icon);
+                  }}
+                  onMouseLeave={() => {
+                    if (longPressTimer) {
+                      clearTimeout(longPressTimer);
+                      setLongPressTimer(null);
+                    }
+                  }}
                 >
-                  <div className="max-w-xl">
-                    <h3 className="text-3xl font-bold text-white drop-shadow-md mb-1">{q.location}</h3>
-                    <p className="text-sm text-gray-200 mb-4 drop-shadow-md">{q.description}</p>
-                    <h2 className="text-2xl font-semibold text-white drop-shadow-md mb-4">{q.question}</h2>
-        
-                    {!answers[i] ? (
-                      <input
-                        type="text"
-                        className="text-black px-3 py-2 rounded w-3/4"
-                        onKeyDown={e => {
-                          if (e.key === 'Enter') {
-                            const val = e.currentTarget.value.toLowerCase().trim();
-                            if (val === q.answer.toLowerCase()) {
-                              setAnswers(prev => ({ ...prev, [i]: true }));
-                            } else {
-                              e.currentTarget.value = '';
-                            }
-                          }
-                        }}
-                        placeholder="Your answer..."
-                      />
-                    ) : (
-                      <div className="mt-4 text-green-300 font-semibold">✅ Correct!</div>
+                  <div className="text-center px-3">
+                    <div className="text-xs font-medium text-slate-600 mb-1 tracking-wide">
+                      {BIBLE_BOOKS[icon.bookIndex].name}
+                    </div>
+                    <div className="text-4xl font-light text-slate-700 mb-1">
+                      {icon.chapter}
+                    </div>
+                    {icon.endBook !== null && (
+                      <div className="text-xs text-slate-500 mt-2 leading-tight">
+                        {BIBLE_BOOKS[icon.startBook].name} {icon.startChapter} - {BIBLE_BOOKS[icon.endBook].name} {icon.endChapter}
+                      </div>
                     )}
                   </div>
                 </div>
-              );
-            })}
+              ))}
+      
+              {icons.length < 10 && (
+                <button
+                  onClick={addIcon}
+                  className={`aspect-square ${getIconColor(timeOfDay)} backdrop-blur-md rounded-2xl shadow-xl flex items-center justify-center cursor-pointer hover:bg-opacity-95 active:scale-95 transition-all border-2 border-dashed border-white border-opacity-40`}
+                >
+                  <Plus className="w-10 h-10 text-slate-400" />
+                </button>
+              )}
+            </div>
           </div>
-        
-          <button
-            onClick={() => setShowQuestions(false)}
-            className="fixed top-4 left-4 bg-gray-800 text-white px-4 py-2 rounded-full shadow-md"
-          >
-            ← Return
-          </button>
         </div>
+      </div>
+      
+      {/* QUESTIONS SCREEN (overlay, slides in) */}
+      <div
+        className={`fixed top-0 left-0 w-full h-full overflow-y-auto text-white transition-transform duration-700 ease-in-out z-40 ${
+          showQuestions ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        <div className="p-6 space-y-12">
+          {questionList.map((q, i) => {
+            const unlocked = i === 0 || answers[i - 1];
+            if (!unlocked) return null;
+            return (
+              <div
+                key={q.id}
+                className={`relative h-[80vh] ${q.gradient} rounded-xl shadow-xl flex flex-col justify-center items-center text-center p-6`}
+              >
+                <div className="max-w-xl">
+                  <h3 className="text-3xl font-bold text-white drop-shadow-md mb-1">{q.location}</h3>
+                  <p className="text-sm text-gray-200 mb-4 drop-shadow-md">{q.description}</p>
+                  <h2 className="text-2xl font-semibold text-white drop-shadow-md mb-4">{q.question}</h2>
+      
+                  {!answers[i] ? (
+                    <input
+                      type="text"
+                      className="text-black px-3 py-2 rounded w-3/4"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const val = e.currentTarget.value.toLowerCase().trim();
+                          if (val === q.answer.toLowerCase()) {
+                            setAnswers((prev) => ({ ...prev, [i]: true }));
+                          } else {
+                            e.currentTarget.value = '';
+                          }
+                        }
+                      }}
+                      placeholder="Your answer..."
+                    />
+                  ) : (
+                    <div className="mt-4 text-green-300 font-semibold">✅ Correct!</div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      
+        <button
+          onClick={() => setShowQuestions(false)}
+          className="fixed top-4 left-4 bg-gray-800 text-white px-4 py-2 rounded-full shadow-md"
+        >
+          ← Return
+        </button>
       </div>
 
       {/* Global Settings Modal */}
