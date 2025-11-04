@@ -573,15 +573,19 @@ export default function ScriptureReader() {
             );
           })}
       
-          {/* Return button now scrolls with content */}
-          <div className="flex justify-center">
-            <button
-              onClick={() => setShowQuestions(false)}
-              className="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg shadow-md hover:bg-gray-300"
-            >
-              Return
-            </button>
-          </div>
+              {/* Return button (bottom-right of final question) */}
+              {questionList.length > 0 && (
+                <div className="relative">
+                  <div className="absolute bottom-6 right-6">
+                    <button
+                      onClick={() => setShowQuestions(false)}
+                      className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg shadow-md hover:bg-gray-300"
+                    >
+                      ← Return
+                    </button>
+                  </div>
+                </div>
+              )}
         </div>
       </div>
 
