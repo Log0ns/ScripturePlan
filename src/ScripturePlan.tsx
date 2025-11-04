@@ -574,12 +574,12 @@ export default function ScriptureReader() {
           })}
       
           {/* Return button now scrolls with content */}
-          <div className="flex justify-center mt-8">
+          <div className="flex justify-center">
             <button
               onClick={() => setShowQuestions(false)}
               className="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg shadow-md hover:bg-gray-300"
             >
-              ← Return to Scripture Plan
+              Return
             </button>
           </div>
         </div>
