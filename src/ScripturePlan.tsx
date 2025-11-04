@@ -119,7 +119,13 @@ export default function ScriptureReader() {
   const [selectedPlan, setSelectedPlan] = useState('Default');
   const [showQuestions, setShowQuestions] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [answers, setAnswers] = useState<Record<number, boolean>>({});
+  const [answers, setAnswers] = useState<{ [key: number]: boolean }>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('quizProgress');
+      return saved ? JSON.parse(saved) : {};
+    }
+    return {};
+  });
 
   type Question = {
     id: number;
@@ -527,14 +533,14 @@ export default function ScriptureReader() {
           showQuestions ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        <div className="p-6 space-y-12">
+        <div className="p-6 space-y-12 pb-32"> {/* Added bottom padding so button doesn’t overlap */}
           {questionList.map((q, i) => {
-            const unlocked = i === 0 || answers[i - 1];
+            const unlocked = i === 0 || answers[i - 1]; // Unlock logic
             if (!unlocked) return null;
             return (
               <div
                 key={q.id}
-                className={`relative h-[80vh] ${q.gradient} rounded-xl shadow-xl flex flex-col justify-center items-center text-center p-6`}
+                className={`relative h-[80vh] ${q.gradient} rounded-xl shadow-xl flex flex-col justify-center items-center text-center p-6 select-none`}
               >
                 <div className="max-w-xl">
                   <h3 className="text-3xl font-bold text-white drop-shadow-md mb-1">{q.location}</h3>
@@ -549,7 +555,9 @@ export default function ScriptureReader() {
                         if (e.key === 'Enter') {
                           const val = e.currentTarget.value.toLowerCase().trim();
                           if (val === q.answer.toLowerCase()) {
-                            setAnswers((prev) => ({ ...prev, [i]: true }));
+                            const updatedAnswers = { ...answers, [i]: true };
+                            setAnswers(updatedAnswers);
+                            localStorage.setItem('quizProgress', JSON.stringify(updatedAnswers));
                           } else {
                             e.currentTarget.value = '';
                           }
@@ -564,17 +572,17 @@ export default function ScriptureReader() {
               </div>
             );
           })}
-        </div>
       
-          {/* Return button (bottom-right) */}
-          <div className="fixed bottom-6 right-6 z-50">
+          {/* Return button now scrolls with content */}
+          <div className="flex justify-center mt-8">
             <button
               onClick={() => setShowQuestions(false)}
-              className="bg-gray-800 text-white px-4 py-2 rounded-full shadow-md hover:bg-gray-700"
+              className="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg shadow-md hover:bg-gray-300"
             >
-              ❌
+              ← Return to Scripture Plan
             </button>
           </div>
+        </div>
       </div>
 
       {/* Global Settings Modal */}
@@ -625,6 +633,15 @@ export default function ScriptureReader() {
                 }}
               >
                 Apply
+              </button>
+              <button
+                onClick={() => {
+                  localStorage.removeItem('quizProgress');
+                  setAnswers({});
+                }}
+                className="bg-red-500 text-white px-3 py-1 rounded mt-2"
+              >
+                Reset Questions
               </button>
             </div>
           </div>
