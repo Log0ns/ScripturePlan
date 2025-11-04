@@ -143,7 +143,7 @@ export default function ScriptureReader() {
       gradient: "bg-gradient-to-br from-emerald-400 via-teal-500 to-blue-600",
       location: "Valley Stream",
       description: "Water runs cold and clear through the valley floor. The mountain rises ahead.",
-      question: "Find the Scripture that answers this question: What is faith? (hint: Hebrews)",
+      question: "Find the Scripture that answers this question: What is faith?/n(hint: Hebrews)",
       answer: "11:1",
     },
     {
@@ -151,7 +151,7 @@ export default function ScriptureReader() {
       gradient: "bg-gradient-to-br from-green-700 via-green-800 to-emerald-900",
       location: "Forest Trail",
       description: "Dense woodland closes in around the ascending path, each switchback pulling deeper into the mountain.",
-      question: "Can faith exist without obedience? (hint: James)",
+      question: "Can faith exist without obedience?/n(hint: James)",
       answer: "2:17",
     },
     {
@@ -159,7 +159,7 @@ export default function ScriptureReader() {
       gradient: "bg-gradient-to-br from-stone-500 via-gray-600 to-slate-700",
       location: "Rocky Outcrop",
       description: "The first break in the canopy reveals both the height climbed and the steeper terrain still ahead.",
-      question: "What does it mean to 'deny yourself' in following Christ? (hint: Luke)",
+      question: "What does it mean to 'deny yourself' in following Christ?/n(hint: Luke)",
       answer: "9:23",
     },
     {
@@ -167,7 +167,7 @@ export default function ScriptureReader() {
       gradient: "bg-gradient-to-br from-lime-400 via-green-500 to-emerald-600",
       location: "Meadow Clearing",
       description: "A brief plateau offers rest.",
-      question: "What does it mean that 'the just shall live by faith'? (hint: include full verse reference, what gives us righteousness and life?)",
+      question: "What does it mean that 'the just shall live by faith'?/n(hint: include full verse reference, what gives us righteousness and life?)",
       answer: "Romans 1:17",
     },
     {
@@ -175,7 +175,7 @@ export default function ScriptureReader() {
       gradient: "bg-gradient-to-br from-amber-600 via-stone-700 to-gray-800",
       location: "Treeline",
       description: "The forest thins and dies, giving way to exposed rock.",
-      question: "Why did Christ have to bear God’s wrath? (hint: Isaiah, two verses)",
+      question: "Why did Christ have to bear God’s wrath?/n(hint: Isaiah, two verses)",
       answer: "53:5–6",
     },
     {
@@ -183,7 +183,7 @@ export default function ScriptureReader() {
       gradient: "bg-gradient-to-br from-slate-400 via-gray-500 to-stone-600",
       location: "Boulder Field",
       description: "Massive stone blocks litter the steep slope, remnants of the mountain's slow collapse over time.",
-      question: "Can someone believe in Jesus and not be saved? (hint: Matthew, three verses)",
+      question: "Can someone believe in Jesus and not be saved?/n(hint: Matthew, three verses)",
       answer: "7:21–23",
     },
     {
@@ -191,7 +191,7 @@ export default function ScriptureReader() {
       gradient: "bg-gradient-to-br from-gray-500 via-slate-600 to-zinc-700",
       location: "Scree Slope",
       description: "Loose rock shifts underfoot on the incline.",
-      question: "How does the Holy Spirit confirm saving faith? (hint: 1 John)",
+      question: "How does the Holy Spirit confirm saving faith?/n(hint: 1 John)",
       answer: "4:13",
     },
     {
@@ -199,7 +199,7 @@ export default function ScriptureReader() {
       gradient: "bg-gradient-to-br from-sky-300 via-slate-500 to-gray-700",
       location: "Ridge Approach",
       description: "The route narrows to a spine of rock with sheer drops falling away into shadow on both sides.",
-      question: "What does it mean to 'walk by faith, not by sight'? (hint: Hebrews)",
+      question: "What does it mean to 'walk by faith, not by sight'?/n(hint: Hebrews)",
       answer: "11:1",
     },
     {
@@ -207,7 +207,7 @@ export default function ScriptureReader() {
       gradient: "bg-gradient-to-br from-slate-300 via-gray-400 to-stone-500",
       location: "False Summit",
       description: "A deceptive peak gives way to the final stretch, the true summit still distant against the sky.",
-      question: "Why is self-righteousness incompatible with faith? (hint: Philippians)",
+      question: "Why is self-righteousness incompatible with faith?/n(hint: Philippians)",
       answer: "3:9",
     },
     {
@@ -215,7 +215,7 @@ export default function ScriptureReader() {
       gradient: "bg-gradient-to-br from-sky-200 via-blue-300 to-indigo-400",
       location: "Mountain Peak",
       description: "The highest point stands bare and wind-scoured, surrounded by distant horizons.",
-      question: "What does it mean that faith 'works through love'? (hint: 1 John, 3 verses)",
+      question: "What does it mean that faith 'works through love'?/n(hint: 1 John, 3 verses)",
       answer: "3:16–18",
     },
   ];
@@ -646,7 +646,7 @@ export default function ScriptureReader() {
                     </div>
                   ) : (
                     <div className="mt-6 text-green-300 font-semibold text-xl">
-                      ✅
+                      Correct
                     </div>
                   )}
                 </div>
