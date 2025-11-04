@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Plus, X } from 'lucide-react';
 
 // Bible books data
@@ -118,59 +118,74 @@ export default function ScriptureReader() {
   const [showGlobalSettings, setShowGlobalSettings] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState('Default');
 
-  const resetDailyIfNeeded = useCallback(() => {
-    const today = new Date().toDateString();
-    const storedDate = localStorage.getItem('lastOpenedDate');
+  // Store reference to our scheduled midnight reset
+  const midnightTimeoutRef = useRef<number | null>(null);
   
-    if (!storedDate || storedDate !== today) {
+  // Helper: milliseconds until next midnight (local time)
+  const msUntilNextMidnight = () => {
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(now.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    return tomorrow.getTime() - now.getTime();
+  };
+  
+  // Reset logic encapsulated in one function
+  const doDailyReset = useCallback(() => {
+    const today = new Date().toDateString();
+    const stored = localStorage.getItem('lastResetDate');
+  
+    if (!stored || stored !== today) {
       setIcons(prev => {
+        if (!prev || prev.length === 0) return prev;
         const resetIcons = prev.map(icon => ({ ...icon, readToday: false }));
-        localStorage.setItem('icons', JSON.stringify(resetIcons));
-        localStorage.setItem('lastOpenedDate', today);
+        try {
+          localStorage.setItem('scripture-icons', JSON.stringify(resetIcons));
+          localStorage.setItem('lastResetDate', today);
+        } catch (err) {
+          console.error('Failed to persist reset state:', err);
+        }
         setLastOpenedDate(today);
-        console.log('Daily reset triggered');
+        console.log('Daily reset triggered at', new Date().toISOString());
         return resetIcons;
       });
+    } else {
+      setLastOpenedDate(stored);
     }
   }, []);
-
+  
+  // Schedule next midnight reset
+  const scheduleMidnightReset = useCallback(() => {
+    if (midnightTimeoutRef.current) {
+      window.clearTimeout(midnightTimeoutRef.current);
+      midnightTimeoutRef.current = null;
+    }
+  
+    const ms = msUntilNextMidnight();
+    midnightTimeoutRef.current = window.setTimeout(() => {
+      doDailyReset();
+      scheduleMidnightReset(); // schedule again for following midnight
+    }, ms);
+  }, [doDailyReset]);
+  
+  // Initial check + scheduling
   useEffect(() => {
-    resetDailyIfNeeded();
+    try {
+      doDailyReset(); // runs immediately if needed
+    } catch (err) {
+      console.error('Error during daily reset check on mount:', err);
+    }
+  
+    scheduleMidnightReset();
+  
+    return () => {
+      if (midnightTimeoutRef.current) {
+        window.clearTimeout(midnightTimeoutRef.current);
+        midnightTimeoutRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  // useEffect(() => {
-  //   const today = new Date().toDateString();
-  //   const storedDate = localStorage.getItem('lastOpenedDate');
-  
-  //   if (!storedDate || storedDate !== today) {
-  //     const resetIcons = icons.map(icon => ({ ...icon, readToday: false }));
-  //     setIcons(resetIcons);
-  //     localStorage.setItem('icons', JSON.stringify(resetIcons));
-  //     localStorage.setItem('lastOpenedDate', today);
-  //     setLastOpenedDate(today);
-  //   } else {
-  //     // Keep the stored date synced
-  //     setLastOpenedDate(storedDate);
-  //   }
-  // }, []); // still runs once, but now compares the stored date each morning
-
-  useEffect(() => {
-    const interval = setInterval(resetDailyIfNeeded, 60000); // check every minute
-    return () => clearInterval(interval);
-  }, [icons]);
-  // useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     const today = new Date().toDateString();
-  //     if (today !== lastOpenedDate) {
-  //       const resetIcons = icons.map(icon => ({ ...icon, readToday: false }));
-  //       setIcons(resetIcons);
-  //       localStorage.setItem('icons', JSON.stringify(resetIcons));
-  //       localStorage.setItem('lastOpenedDate', today);
-  //       setLastOpenedDate(today);
-  //     }
-  //   }, 60000); // check every minute
-  
-  //   return () => clearInterval(interval);
-  // }, [icons, lastOpenedDate]);
 
   useEffect(() => {
     loadData();
