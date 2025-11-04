@@ -7,3 +7,16 @@
   -webkit-user-select: none; /* Safari */
   -ms-user-select: none;     /* IE10+ */
 }
+
+@keyframes moveClouds {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: -2000px 0;
+  }
+}
+
+.animate-clouds {
+  animation: moveClouds 60s linear infinite;
+}
