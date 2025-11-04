@@ -597,20 +597,6 @@ export default function ScriptureReader() {
             const unlocked = i === 0 || answers[i - 1];
             if (!unlocked) return null;
       
-            const isAnswered = answers[i];
-            const [inputValue, setInputValue] = React.useState('');
-      
-            const handleSubmit = () => {
-              const val = inputValue.toLowerCase().trim();
-              if (val === q.answer.toLowerCase()) {
-                const updatedAnswers = { ...answers, [i]: true };
-                setAnswers(updatedAnswers);
-                localStorage.setItem('quizProgress', JSON.stringify(updatedAnswers));
-              } else {
-                setInputValue('');
-              }
-            };
-      
             return (
               <div
                 key={q.id}
@@ -627,17 +613,31 @@ export default function ScriptureReader() {
                     {q.question}
                   </h2>
       
-                  {!isAnswered ? (
+                  {!answers[i] ? (
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                       <input
                         type="text"
-                        value={inputValue}
-                        onChange={(e) => setInputValue(e.target.value)}
+                        value={inputs[i] || ''}
+                        onChange={(e) =>
+                          setInputs((prev) => ({ ...prev, [i]: e.target.value }))
+                        }
                         className="text-black text-lg px-4 py-2 rounded w-64 text-center"
                         placeholder="Your answer..."
                       />
                       <button
-                        onClick={handleSubmit}
+                        onClick={() => {
+                          const val = (inputs[i] || '').toLowerCase().trim();
+                          if (val === q.answer.toLowerCase()) {
+                            const updatedAnswers = { ...answers, [i]: true };
+                            setAnswers(updatedAnswers);
+                            localStorage.setItem(
+                              'quizProgress',
+                              JSON.stringify(updatedAnswers)
+                            );
+                          } else {
+                            setInputs((prev) => ({ ...prev, [i]: '' }));
+                          }
+                        }}
                         className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg shadow-md hover:bg-gray-300 active:scale-95 transition"
                       >
                         Submit
