@@ -588,10 +588,10 @@ export default function ScriptureReader() {
           showQuestions ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        {/* Static cloud background that fills screen and beyond */}
+        {/* Static cloudy background that fills and obscures behind cards */}
         <div className="absolute inset-0 bg-gradient-to-b from-sky-100 via-blue-50 to-white opacity-90"></div>
       
-        {/* Scrollable container that grows upward */}
+        {/* Scrollable container (scrolls upward as you progress) */}
         <div className="relative flex flex-col-reverse overflow-y-auto h-full p-6 space-y-reverse space-y-12 pb-24">
           {questionList.map((q, i) => {
             const unlocked = i === 0 || answers[i - 1];
@@ -599,24 +599,33 @@ export default function ScriptureReader() {
             return (
               <div
                 key={q.id}
-                className={`relative h-[80vh] ${q.gradient} rounded-xl shadow-xl flex flex-col justify-center items-center text-center p-6 select-none`}
+                className={`relative min-h-[90vh] ${q.gradient} rounded-2xl shadow-xl flex flex-col justify-center items-center text-center p-8 select-none`}
               >
-                <div className="max-w-xl">
-                  <h3 className="text-3xl font-bold text-white drop-shadow-md mb-1">{q.location}</h3>
-                  <p className="text-sm text-gray-200 mb-4 drop-shadow-md">{q.description}</p>
-                  <h2 className="text-2xl font-semibold text-white drop-shadow-md mb-4">{q.question}</h2>
+                <div className="max-w-2xl mx-auto">
+                  <h3 className="text-4xl font-bold text-white drop-shadow-md mb-2">
+                    {q.location}
+                  </h3>
+                  <p className="text-base text-gray-200 mb-6 drop-shadow-md">
+                    {q.description}
+                  </p>
+                  <h2 className="text-3xl font-semibold text-white drop-shadow-md mb-6">
+                    {q.question}
+                  </h2>
       
                   {!answers[i] ? (
                     <input
                       type="text"
-                      className="text-black px-3 py-2 rounded w-3/4"
+                      className="text-black text-lg px-4 py-2 rounded w-3/4"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           const val = e.currentTarget.value.toLowerCase().trim();
                           if (val === q.answer.toLowerCase()) {
                             const updatedAnswers = { ...answers, [i]: true };
                             setAnswers(updatedAnswers);
-                            localStorage.setItem('quizProgress', JSON.stringify(updatedAnswers));
+                            localStorage.setItem(
+                              'quizProgress',
+                              JSON.stringify(updatedAnswers)
+                            );
                           } else {
                             e.currentTarget.value = '';
                           }
@@ -625,24 +634,24 @@ export default function ScriptureReader() {
                       placeholder="Your answer..."
                     />
                   ) : (
-                    <div className="mt-4 text-green-300 font-semibold">✅ Correct!</div>
+                    <div className="mt-6 text-green-300 font-semibold text-xl">
+                      ✅ Correct!
+                    </div>
                   )}
                 </div>
-      
-                {/* Return button only on final unlocked question */}
-                {unlocked && i === questionList.length - 1 && (
-                  <div className="absolute bottom-6 right-6">
-                    <button
-                      onClick={() => setShowQuestions(false)}
-                      className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg shadow-md hover:bg-gray-300"
-                    >
-                      ❌
-                    </button>
-                  </div>
-                )}
               </div>
             );
           })}
+        </div>
+      
+        {/* Always-visible Return button (bottom-right of screen) */}
+        <div className="fixed bottom-6 right-6 z-50">
+          <button
+            onClick={() => setShowQuestions(false)}
+            className="bg-gray-800 text-white px-5 py-2 rounded-lg shadow-md hover:bg-gray-700"
+          >
+            ❌
+          </button>
         </div>
       </div>
 
