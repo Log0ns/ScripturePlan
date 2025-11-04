@@ -588,14 +588,29 @@ export default function ScriptureReader() {
           showQuestions ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        {/* Static cloudy background that fills and obscures behind cards */}
+        {/* Cloudy backdrop obscuring main screen */}
         <div className="absolute inset-0 bg-gradient-to-b from-sky-100 via-blue-50 to-white opacity-90"></div>
       
-        {/* Scrollable container (scrolls upward as you progress) */}
+        {/* Scrollable upward-flowing question stack */}
         <div className="relative flex flex-col-reverse overflow-y-auto h-full p-6 space-y-reverse space-y-12 pb-24">
           {questionList.map((q, i) => {
             const unlocked = i === 0 || answers[i - 1];
             if (!unlocked) return null;
+      
+            const isAnswered = answers[i];
+            const [inputValue, setInputValue] = React.useState('');
+      
+            const handleSubmit = () => {
+              const val = inputValue.toLowerCase().trim();
+              if (val === q.answer.toLowerCase()) {
+                const updatedAnswers = { ...answers, [i]: true };
+                setAnswers(updatedAnswers);
+                localStorage.setItem('quizProgress', JSON.stringify(updatedAnswers));
+              } else {
+                setInputValue('');
+              }
+            };
+      
             return (
               <div
                 key={q.id}
@@ -612,30 +627,25 @@ export default function ScriptureReader() {
                     {q.question}
                   </h2>
       
-                  {!answers[i] ? (
-                    <input
-                      type="text"
-                      className="text-black text-lg px-4 py-2 rounded w-3/4"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          const val = e.currentTarget.value.toLowerCase().trim();
-                          if (val === q.answer.toLowerCase()) {
-                            const updatedAnswers = { ...answers, [i]: true };
-                            setAnswers(updatedAnswers);
-                            localStorage.setItem(
-                              'quizProgress',
-                              JSON.stringify(updatedAnswers)
-                            );
-                          } else {
-                            e.currentTarget.value = '';
-                          }
-                        }
-                      }}
-                      placeholder="Your answer..."
-                    />
+                  {!isAnswered ? (
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                      <input
+                        type="text"
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        className="text-black text-lg px-4 py-2 rounded w-64 text-center"
+                        placeholder="Your answer..."
+                      />
+                      <button
+                        onClick={handleSubmit}
+                        className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg shadow-md hover:bg-gray-300 active:scale-95 transition"
+                      >
+                        Submit
+                      </button>
+                    </div>
                   ) : (
                     <div className="mt-6 text-green-300 font-semibold text-xl">
-                      ✅ Correct!
+                      ✅
                     </div>
                   )}
                 </div>
@@ -644,7 +654,7 @@ export default function ScriptureReader() {
           })}
         </div>
       
-        {/* Always-visible Return button (bottom-right of screen) */}
+        {/* Always-visible Return button */}
         <div className="fixed bottom-6 right-6 z-50">
           <button
             onClick={() => setShowQuestions(false)}
