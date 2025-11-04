@@ -126,6 +126,7 @@ export default function ScriptureReader() {
     }
     return {};
   });
+  const [inputs, setInputs] = useState<{ [key: number]: string }>({});
 
   type Question = {
     id: number;
