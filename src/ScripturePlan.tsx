@@ -584,17 +584,17 @@ export default function ScriptureReader() {
       
       {/* QUESTIONS SCREEN (overlay, slides in) */}
       <div
-        className={`fixed top-0 left-0 w-full h-full overflow-y-auto text-white transition-transform duration-700 ease-in-out z-40 ${
+        className={`fixed top-0 left-0 w-full h-full text-white transition-transform duration-700 ease-in-out z-40 ${
           showQuestions ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        {/* Cloud background layer */}
-        <div className="absolute inset-0 bg-gradient-to-b from-sky-200 via-blue-100 to-white overflow-hidden">
-          <div className="absolute inset-0 opacity-60 animate-clouds bg-[url('/clouds.svg')] bg-repeat-x bg-top"></div>
-        </div>
-        <div className="p-6 space-y-12 pb-8"> {/* Added bottom padding so button doesn’t overlap */}
+        {/* Static cloud background that fills screen and beyond */}
+        <div className="absolute inset-0 bg-gradient-to-b from-sky-100 via-blue-50 to-white opacity-90"></div>
+      
+        {/* Scrollable container that grows upward */}
+        <div className="relative flex flex-col-reverse overflow-y-auto h-full p-6 space-y-reverse space-y-12 pb-24">
           {questionList.map((q, i) => {
-            const unlocked = i === 0 || answers[i - 1]; // Unlock logic
+            const unlocked = i === 0 || answers[i - 1];
             if (!unlocked) return null;
             return (
               <div
@@ -628,13 +628,9 @@ export default function ScriptureReader() {
                     <div className="mt-4 text-green-300 font-semibold">✅ Correct!</div>
                   )}
                 </div>
-              </div>
-            );
-          })}
       
-              {/* Return button (bottom-right of final question) */}
-              {questionList.length > 0 && (
-                <div className="relative">
+                {/* Return button only on final unlocked question */}
+                {unlocked && i === questionList.length - 1 && (
                   <div className="absolute bottom-6 right-6">
                     <button
                       onClick={() => setShowQuestions(false)}
@@ -643,8 +639,10 @@ export default function ScriptureReader() {
                       ❌
                     </button>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
