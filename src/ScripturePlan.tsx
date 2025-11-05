@@ -417,18 +417,6 @@ export default function ScriptureReader() {
           <div className="w-full max-w-md">
             {/* ⚙️ and ❓ buttons fixed to bottom-right */}
             <div className="fixed bottom-6 right-6 flex flex-col space-y-3 z-30">
-              <button
-                className="bg-gray-200 text-gray-800 px-3 py-1 rounded-lg shadow hover:bg-gray-300"
-                onClick={() => setShowGlobalSettings(true)}
-              >
-                ⚙️
-              </button>
-              <button
-                className="bg-gray-200 text-gray-800 px-3 py-1 rounded-lg shadow hover:bg-gray-300"
-                onClick={() => setShowQuestions(true)}
-              >
-                ❓
-              </button>
               {/* Sun Reset Button */}
               <button
                 onClick={() => {
@@ -443,6 +431,18 @@ export default function ScriptureReader() {
               >
                 ☀️
               </button>
+              <button
+                className="bg-gray-200 text-gray-800 px-3 py-1 rounded-lg shadow hover:bg-gray-300"
+                onClick={() => setShowGlobalSettings(true)}
+              >
+                ⚙️
+              </button>
+              <button
+                className="bg-gray-200 text-gray-800 px-3 py-1 rounded-lg shadow hover:bg-gray-300"
+                onClick={() => setShowQuestions(true)}
+              >
+                ❓
+              </button>              
             </div>
       
             <div className="grid grid-cols-2 gap-6">
