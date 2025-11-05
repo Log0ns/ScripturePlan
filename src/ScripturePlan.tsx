@@ -457,9 +457,9 @@ export default function ScriptureReader() {
                 </button>
               </div>
             
-              {/* Settings Button */}
+              {/* Global Settings Button */}
               <button
-                onClick={() => setShowSettings(true)}
+                onClick={() => setShowGlobalSettings(true)}
                 className="bg-gray-200 text-gray-800 px-3 py-1 rounded-lg shadow hover:bg-gray-300 pointer-events-auto"
                 title="Settings"
               >
