@@ -140,7 +140,7 @@ export default function ScriptureReader() {
   const questionList: Question[] = [
     {
       id: 1,
-      gradient: "bg-gradient-to-br from-emerald-400 via-teal-500 to-blue-600",
+      gradient: "bg-gradient-to-br from-sky-500 via-blue-500 to-blue-600",
       location: "Valley Stream",
       description: "Water runs cold and clear through the valley floor. The mountain rises ahead.",
       question: "Find the Scripture that answers this question: What is faith? (hint: Hebrews)",
