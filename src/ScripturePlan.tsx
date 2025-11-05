@@ -703,20 +703,21 @@ export default function ScriptureReader() {
                     localStorage.removeItem('quizProgress');
                     setAnswers({});
                   }}
-                  className="bg-red-500 text-white px-3 py-1 rounded mt-2"
+                  className="bg-red-500 text-white px-3 py-1 rounded shadow hover:bg-red-600 mt-4"
                 >
                   Reset Questions
                 </button>
-              {/* Reset Sun Counter Button */}
+            </div>
+            <div className="flex justify-end mt-1 space-x-2">
+              {/* Reset Day Counter Button */}
               <button
                 onClick={() => {
                   setDaysCompleted(0);
                   localStorage.setItem('daysCompleted', '0');
-                  alert('Streak has been reset.');
                 }}
-                className="bg-yellow-500 text-white px-4 py-2 rounded-lg shadow hover:bg-yellow-600 mt-4"
+                className="bg-yellow-500 text-white px-3 py-1 rounded shadow hover:bg-yellow-600 mt-4"
               >
-                Reset Streak
+                Reset Day Counter
               </button>
             </div>
           </div>
