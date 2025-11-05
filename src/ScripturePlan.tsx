@@ -143,8 +143,8 @@ export default function ScriptureReader() {
       gradient: "bg-gradient-to-br from-sky-500 via-blue-500 to-blue-600",
       location: "Valley Stream",
       description: "Water runs cold and clear through the valley floor. The mountain rises ahead.",
-      question: "Find the Scripture that answers this question: What is faith? (hint: Hebrews)",
-      answer: "11:1",
+      question: "What is required to be saved? (hint: John, find the verse)",
+      answer: "John 3:3",
     },
     {
       id: 2,
@@ -152,7 +152,7 @@ export default function ScriptureReader() {
       location: "Forest Trail",
       description: "Dense woodland closes in around the ascending path, each switchback pulling deeper into the mountain.",
       question: "Can faith exist without obedience? (hint: James)",
-      answer: "2:17",
+      answer: "James 2:17",
     },
     {
       id: 3,
@@ -160,14 +160,14 @@ export default function ScriptureReader() {
       location: "Rocky Outcrop",
       description: "The first break in the canopy reveals both the height climbed and the steeper terrain still ahead.",
       question: "What does it mean to 'deny yourself' in following Christ? (hint: Luke)",
-      answer: "9:23",
+      answer: "Luke 9:23",
     },
     {
       id: 4,
       gradient: "bg-gradient-to-br from-lime-400 via-green-500 to-emerald-600",
       location: "Meadow Clearing",
       description: "A brief plateau offers rest.",
-      question: "What does it mean that 'the just shall live by faith'? (hint: include full verse reference, what gives us righteousness and life?)",
+      question: "What does it mean that 'the just shall live by faith'? (hint: what gives us righteousness and life?)",
       answer: "Romans 1:17",
     },
     {
@@ -176,7 +176,7 @@ export default function ScriptureReader() {
       location: "Treeline",
       description: "The forest thins and dies, giving way to exposed rock.",
       question: "Why did Christ have to bear God’s wrath? (hint: Isaiah, two verses)",
-      answer: "53:5–6",
+      answer: "Isaiah 53:5–6",
     },
     {
       id: 6,
@@ -184,7 +184,7 @@ export default function ScriptureReader() {
       location: "Boulder Field",
       description: "Massive stone blocks litter the steep slope, remnants of the mountain's slow collapse over time.",
       question: "Can someone believe in Jesus and not be saved? (hint: Matthew, three verses)",
-      answer: "7:21–23",
+      answer: "Matthew 7:21–23",
     },
     {
       id: 7,
@@ -192,7 +192,7 @@ export default function ScriptureReader() {
       location: "Scree Slope",
       description: "Loose rock shifts underfoot on the incline.",
       question: "How does the Holy Spirit confirm saving faith? (hint: 1 John)",
-      answer: "4:13",
+      answer: "1 John 4:13",
     },
     {
       id: 8,
@@ -200,7 +200,7 @@ export default function ScriptureReader() {
       location: "Ridge Approach",
       description: "The route narrows to a spine of rock with sheer drops falling away into shadow on both sides.",
       question: "What does it mean to 'walk by faith, not by sight'? (hint: Hebrews)",
-      answer: "11:1",
+      answer: "Hebrews 11:1",
     },
     {
       id: 9,
@@ -208,7 +208,7 @@ export default function ScriptureReader() {
       location: "False Summit",
       description: "A deceptive peak gives way to the final stretch, the true summit still distant against the sky.",
       question: "Why is self-righteousness incompatible with faith? (hint: Philippians)",
-      answer: "3:9",
+      answer: "Philippians 3:9",
     },
     {
       id: 10,
@@ -216,7 +216,7 @@ export default function ScriptureReader() {
       location: "Mountain Peak",
       description: "The highest point stands bare and wind-scoured, surrounded by distant horizons.",
       question: "What does it mean that faith 'works through love'? (hint: 1 John, 3 verses)",
-      answer: "3:16–18",
+      answer: "1 John 3:16–18",
     },
   ];
 
