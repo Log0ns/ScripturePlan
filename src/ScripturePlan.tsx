@@ -456,16 +456,7 @@ export default function ScriptureReader() {
                   ☀️
                 </button>
               </div>
-            
-              {/* Global Settings Button */}
-              <button
-                onClick={() => setShowGlobalSettings(true)}
-                className="bg-gray-200 text-gray-800 px-3 py-1 rounded-lg shadow hover:bg-gray-300 pointer-events-auto"
-                title="Settings"
-              >
-                ⚙️
-              </button>
-            
+
               {/* Quiz Button with Counter */}
               <div className="flex items-center space-x-2 pointer-events-auto">
                 <div className="bg-gray-800 bg-opacity-70 text-white text-sm font-semibold px-2 py-1 rounded-lg shadow select-none">
@@ -479,6 +470,15 @@ export default function ScriptureReader() {
                   ❓
                 </button>
               </div>
+            
+              {/* Global Settings Button */}
+              <button
+                onClick={() => setShowGlobalSettings(true)}
+                className="bg-gray-200 text-gray-800 px-3 py-1 rounded-lg shadow hover:bg-gray-300 pointer-events-auto"
+                title="Settings"
+              >
+                ⚙️
+              </button>
             </div>
       
             <div className="grid grid-cols-2 gap-6">
