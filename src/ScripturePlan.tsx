@@ -127,6 +127,13 @@ export default function ScriptureReader() {
     return {};
   });
   const [inputs, setInputs] = useState<{ [key: number]: string }>({});
+  const [daysCompleted, setDaysCompleted] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('daysCompleted');
+      return saved ? parseInt(saved) : 0;
+    }
+    return 0;
+  });
 
   type Question = {
     id: number;
@@ -415,34 +422,70 @@ export default function ScriptureReader() {
         {/* Icons Grid */}
         <div className="flex-1 px-8 py-20 relative z-10 flex items-center justify-center">
           <div className="w-full max-w-md">
-            {/* ⚙️ and ❓ buttons fixed to bottom-right */}
-            <div className="fixed bottom-6 right-6 flex flex-col space-y-3 z-30">
-              {/* Sun Reset Button */}
+            {/* buttons fixed to bottom-right */}
+            <div className="fixed bottom-6 right-6 flex flex-col space-y-4 items-end z-50">
+            
+              {/* Settings Button */}
               <button
-                onClick={() => {
-                  setIcons(prev => {
-                    const updated = prev.map(icon => ({ ...icon, readToday: false }));
-                    localStorage.setItem('icons', JSON.stringify(updated));
-                    return updated;
-                  });
-                }}
-                className="bg-yellow-300 text-yellow-900 px-3 py-1 rounded-lg shadow hover:bg-yellow-400"
-                title="Reset today's readings"
-              >
-                ☀️
-              </button>
-              <button
+                onClick={() => setShowSettings(true)}
                 className="bg-gray-200 text-gray-800 px-3 py-1 rounded-lg shadow hover:bg-gray-300"
-                onClick={() => setShowGlobalSettings(true)}
               >
                 ⚙️
               </button>
-              <button
-                className="bg-gray-200 text-gray-800 px-3 py-1 rounded-lg shadow hover:bg-gray-300"
-                onClick={() => setShowQuestions(true)}
-              >
-                ❓
-              </button>              
+            
+              {/* Quiz Button with Counter */}
+              <div className="flex items-center space-x-2">
+                <div className="bg-gray-800 bg-opacity-60 text-white text-sm font-semibold px-2 py-1 rounded-lg shadow">
+                  {Object.values(answers).filter(Boolean).length}
+                </div>
+                <button
+                  onClick={() => setShowQuestions(true)}
+                  className="bg-gray-200 text-gray-800 px-3 py-1 rounded-lg shadow hover:bg-gray-300"
+                  title="View Quiz"
+                >
+                  ❓
+                </button>
+              </div>
+            
+              {/* Sun Button with Counter */}
+              <div className="flex items-center space-x-2">
+                <div className="bg-yellow-600 bg-opacity-70 text-white text-sm font-semibold px-2 py-1 rounded-lg shadow">
+                  {daysCompleted}
+                </div>
+                <button
+                  onClick={() => {
+                    // Check if all icons are read
+                    const allRead = icons.length > 0 && icons.every(icon => icon.readToday);
+            
+                    if (allRead) {
+                      // Increment day counter
+                      setDaysCompleted(prev => {
+                        const updated = prev + 1;
+                        localStorage.setItem('daysCompleted', updated.toString());
+                        return updated;
+                      });
+            
+                      // Reset all icons to unread
+                      setIcons(prev => {
+                        const updated = prev.map(icon => ({ ...icon, readToday: false }));
+                        localStorage.setItem('icons', JSON.stringify(updated));
+                        return updated;
+                      });
+                    } else {
+                      // Manual reset if not all read
+                      setIcons(prev => {
+                        const updated = prev.map(icon => ({ ...icon, readToday: false }));
+                        localStorage.setItem('icons', JSON.stringify(updated));
+                        return updated;
+                      });
+                    }
+                  }}
+                  className="bg-yellow-300 text-yellow-900 px-3 py-1 rounded-lg shadow hover:bg-yellow-400"
+                  title="Reset today's readings"
+                >
+                  ☀️
+                </button>
+              </div>
             </div>
       
             <div className="grid grid-cols-2 gap-6">
