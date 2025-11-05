@@ -707,16 +707,12 @@ export default function ScriptureReader() {
                 >
                   Reset Questions
                 </button>
-            </div>
-            <div className="flex justify-end mt-4 space-x-2">
               {/* Reset Sun Counter Button */}
               <button
                 onClick={() => {
-                  if (confirm('Reset the day counter? This cannot be undone.')) {
-                    setDaysCompleted(0);
-                    localStorage.setItem('daysCompleted', '0');
-                    alert('Streak has been reset.');
-                  }
+                  setDaysCompleted(0);
+                  localStorage.setItem('daysCompleted', '0');
+                  alert('Streak has been reset.');
                 }}
                 className="bg-yellow-500 text-white px-4 py-2 rounded-lg shadow hover:bg-yellow-600 mt-4"
               >
