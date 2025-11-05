@@ -220,75 +220,6 @@ export default function ScriptureReader() {
     },
   ];
 
-  // Store reference to our scheduled midnight reset
-  const midnightTimeoutRef = useRef<number | null>(null);
-  
-  // Helper: milliseconds until next midnight (local time)
-  const msUntilNextMidnight = () => {
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(now.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0);
-    return tomorrow.getTime() - now.getTime();
-  };
-  
-  // Reset logic encapsulated in one function
-  const doDailyReset = useCallback(() => {
-    const today = new Date().toDateString();
-    const stored = localStorage.getItem('lastResetDate');
-  
-    if (!stored || stored !== today) {
-      setIcons(prev => {
-        if (!prev || prev.length === 0) return prev;
-        const resetIcons = prev.map(icon => ({ ...icon, readToday: false }));
-        try {
-          localStorage.setItem('scripture-icons', JSON.stringify(resetIcons));
-          localStorage.setItem('lastResetDate', today);
-        } catch (err) {
-          console.error('Failed to persist reset state:', err);
-        }
-        setLastOpenedDate(today);
-        console.log('Daily reset triggered at', new Date().toISOString());
-        return resetIcons;
-      });
-    } else {
-      setLastOpenedDate(stored);
-    }
-  }, []);
-  
-  // Schedule next midnight reset
-  const scheduleMidnightReset = useCallback(() => {
-    if (midnightTimeoutRef.current) {
-      window.clearTimeout(midnightTimeoutRef.current);
-      midnightTimeoutRef.current = null;
-    }
-  
-    const ms = msUntilNextMidnight();
-    midnightTimeoutRef.current = window.setTimeout(() => {
-      doDailyReset();
-      scheduleMidnightReset(); // schedule again for following midnight
-    }, ms);
-  }, [doDailyReset]);
-  
-  // Initial check + scheduling
-  useEffect(() => {
-    try {
-      doDailyReset(); // runs immediately if needed
-    } catch (err) {
-      console.error('Error during daily reset check on mount:', err);
-    }
-  
-    scheduleMidnightReset();
-  
-    return () => {
-      if (midnightTimeoutRef.current) {
-        window.clearTimeout(midnightTimeoutRef.current);
-        midnightTimeoutRef.current = null;
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   useEffect(() => {
     loadData();
     const interval = setInterval(() => {
@@ -497,6 +428,20 @@ export default function ScriptureReader() {
                 onClick={() => setShowQuestions(true)}
               >
                 ❓
+              </button>
+              {/* Sun Reset Button */}
+              <button
+                onClick={() => {
+                  setIcons(prev => {
+                    const updated = prev.map(icon => ({ ...icon, readToday: false }));
+                    localStorage.setItem('icons', JSON.stringify(updated));
+                    return updated;
+                  });
+                }}
+                className="bg-yellow-300 text-yellow-900 px-3 py-1 rounded-lg shadow hover:bg-yellow-400"
+                title="Reset today's readings"
+              >
+                ☀️
               </button>
             </div>
       
