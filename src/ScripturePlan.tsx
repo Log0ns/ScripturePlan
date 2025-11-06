@@ -151,7 +151,7 @@ export default function ScriptureReader() {
       gradient: "bg-gradient-to-br from-sky-500 via-blue-500 to-blue-600",
       location: "Valley Stream",
       description: "Water runs cold and clear through the valley floor. The mountain rises ahead.",
-      question: "What verse teaches what we need to be saved?",
+      question: "Which verse teaches what we need to be saved?",
       answer: "John 3:3",
       hint: "Find the verse in John",
       requiredDays: 3,
