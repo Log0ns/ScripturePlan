@@ -79,9 +79,12 @@ const DEFAULT_ICONS = [
 ];
 
 type PrayerIcon = {
-    id: string;
+    id: number;
     title: string;
-    groups: string[][];
+    groups: {
+      name: string;
+      people: string[];
+    }[];
     currentGroupIndex: number;
     readToday: boolean;
   };
@@ -615,12 +618,11 @@ export default function ScriptureReader() {
             </div>
           </div>
         </div>
-        <h2 className="text-xl font-semibold mt-10 mb-4">Prayer</h2>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          {prayerIcons.map((icon) => {
-            const currentGroup = icon.groups[icon.currentGroupIndex] || [];
         
+        <div className="grid grid-cols-4 gap-4 justify-center mt-6">
+          {prayerIcons.map((icon) => {
+            const currentGroup = icon.groups[icon.currentGroupIndex];
+      
             return (
               <div
                 key={icon.id}
@@ -638,19 +640,35 @@ export default function ScriptureReader() {
                     )
                   );
                 }}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  setSelectedPrayerIcon(icon);
-                  setShowPrayerSettings(true);
-                }}
-                className={`relative p-4 rounded-xl shadow cursor-pointer select-none transition
-                  ${icon.readToday ? 'ring-4 ring-emerald-400 glow' : 'bg-white'}
+                className={`relative flex flex-col items-center justify-center
+                  w-20 h-20 rounded-2xl shadow-sm
+                  transition-all select-none
+                  ${icon.readToday
+                    ? 'ring-2 ring-amber-300 shadow-amber-200'
+                    : 'bg-white'}
                 `}
               >
-                <h3 className="font-semibold text-center">{icon.title}</h3>
-        
-                <div className="mt-2 text-sm text-center space-y-1">
-                  {currentGroup.map((name, i) => (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedPrayerIcon(icon);
+                    setShowPrayerSettings(true);
+                  }}
+                  className="absolute top-1 right-1 text-xs opacity-60 hover:opacity-100"
+                >
+                  ⚙️
+                </button>
+              
+                <h3 className="font-semibold text-center text-sm">
+                  {icon.title}
+                </h3>
+              
+                <div className="text-xs text-slate-600 mt-1">
+                  {currentGroup?.name ?? ''}
+                </div>
+              
+                <div className="mt-2 text-xs text-center space-y-1">
+                  {(currentGroup?.people ?? []).map((name, i) => (
                     <div key={i}>{name}</div>
                   ))}
                 </div>
@@ -665,9 +683,9 @@ export default function ScriptureReader() {
                 setPrayerIcons(prev => [
                   ...prev,
                   {
-                    id: crypto.randomUUID(),
+                    id: Date.now(),
                     title: 'Prayer',
-                    groups: [['Name 1']],
+                    groups: [{ name: 'Group', people: [''] }],
                     currentGroupIndex: 0,
                     readToday: false,
                   },
@@ -866,6 +884,22 @@ export default function ScriptureReader() {
           <div className="bg-white w-full rounded-t-3xl p-6 pb-8 max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-medium text-slate-800">Prayer Settings</h2>
+              <input
+                value={selectedPrayerIcon.title}
+                onChange={(e) => {
+                  setPrayerIcons(prev =>
+                    prev.map(p =>
+                      p.id === selectedPrayerIcon.id
+                        ? { ...p, title: e.target.value }
+                        : p
+                    )
+                  );
+                  setSelectedPrayerIcon(prev =>
+                    prev ? { ...prev, title: e.target.value } : prev
+                  );
+                }}
+                className="w-full text-lg font-semibold border rounded px-3 py-2 mb-4"
+              />
               <button
                 onClick={() => setShowPrayerSettings(false)}
                 className="text-slate-400 hover:text-slate-600"
@@ -880,15 +914,12 @@ export default function ScriptureReader() {
       
                 {group.map((name, ni) => (
                   <input
-                    key={ni}
-                    value={name}
+                    value={group.name}
                     onChange={(e) => {
                       const updatedGroups = selectedPrayerIcon.groups.map((g, idx) =>
-                        idx === gi
-                          ? g.map((n, nIdx) => (nIdx === ni ? e.target.value : n))
-                          : g
+                        idx === gi ? { ...g, name: e.target.value } : g
                       );
-      
+                  
                       setPrayerIcons(prev =>
                         prev.map(p =>
                           p.id === selectedPrayerIcon.id
@@ -896,12 +927,12 @@ export default function ScriptureReader() {
                             : p
                         )
                       );
-      
+                  
                       setSelectedPrayerIcon(prev =>
                         prev ? { ...prev, groups: updatedGroups } : prev
                       );
                     }}
-                    className="w-full border rounded px-2 py-1 mb-2"
+                    className="w-full font-semibold border rounded px-2 py-1 mb-2"
                   />
                 ))}
       
@@ -926,6 +957,27 @@ export default function ScriptureReader() {
                   className="text-sm text-blue-600"
                 >
                   + Add Name
+                </button>
+
+                <button
+                  onClick={() => {
+                    const updatedGroups = selectedPrayerIcon.groups.filter((_, i) => i !== gi);
+                
+                    setPrayerIcons(prev =>
+                      prev.map(p =>
+                        p.id === selectedPrayerIcon.id
+                          ? { ...p, groups: updatedGroups, currentGroupIndex: 0 }
+                          : p
+                      )
+                    );
+                
+                    setSelectedPrayerIcon(prev =>
+                      prev ? { ...prev, groups: updatedGroups } : prev
+                    );
+                  }}
+                  className="text-red-500 text-xs mt-2"
+                >
+                  Delete Group
                 </button>
               </div>
             ))}
