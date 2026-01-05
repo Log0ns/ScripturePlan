@@ -621,7 +621,7 @@ export default function ScriptureReader() {
           </div>
         </div>
         
-        <div className="grid grid-cols-4 gap-4 justify-center mt-6">
+        <div className="grid grid-cols-2 gap-6 justify-center mt-8">
           {prayerIcons.map((icon) => {
             const group = icon.groups[icon.currentGroupIndex];
           
@@ -643,24 +643,21 @@ export default function ScriptureReader() {
                   );
                 }}
                 onPointerDown={(e) => {
-                  if (e.pointerType === 'touch') {
-                    const timeout = setTimeout(() => {
-                      setSelectedPrayerIcon(icon);
-                      setShowPrayerSettings(true);
-                    }, 600);
-          
-                    const cancel = () => clearTimeout(timeout);
-                    e.target.addEventListener('pointerup', cancel, { once: true });
-                    e.target.addEventListener('pointerleave', cancel, { once: true });
-                  }
+                  if (e.pointerType !== 'touch') return;
+                
+                  const timer = setTimeout(() => {
+                    setSelectedPrayerIcon(icon);
+                    setShowPrayerSettings(true);
+                  }, 600);
+                
+                  const cancel = () => clearTimeout(timer);
+                
+                  e.currentTarget.addEventListener('pointerup', cancel, { once: true });
+                  e.currentTarget.addEventListener('pointerleave', cancel, { once: true });
                 }}
-                className={`flex flex-col items-center justify-center
-                  w-20 h-20 rounded-2xl shadow-sm
-                  transition-all select-none
-                  ${icon.readToday
-                    ? 'ring-2 ring-amber-300 shadow-amber-200'
-                    : 'bg-white'}
-                `}
+                className={`aspect-square ${getIconColor(timeOfDay)} backdrop-blur-md rounded-2xl flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-all
+                    ${icon.readToday ? 'ring-4 ring-yellow-400 shadow-yellow-400/50' : 'shadow-xl'}
+                  `}
               >
                 <div className="text-sm font-semibold text-center">
                   {icon.title}
