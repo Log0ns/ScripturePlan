@@ -655,20 +655,16 @@ export default function ScriptureReader() {
                   e.currentTarget.addEventListener('pointerup', cancel, { once: true });
                   e.currentTarget.addEventListener('pointerleave', cancel, { once: true });
                 }}
-                className={`flex flex-col items-center justify-center
-                  w-24 h-24 rounded-2xl shadow-sm
-                  transition-all select-none
-                  ${icon.readToday
-                    ? 'ring-2 ring-amber-300 shadow-amber-200'
-                    : 'bg-white'}
+                className={`aspect-square ${getIconColor(timeOfDay)} backdrop-blur-md rounded-2xl flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-all
+                    ${icon.readToday ? 'ring-4 ring-yellow-400 shadow-yellow-400/50' : 'shadow-xl'}
                 `}
               >
                 <div className="text-sm font-semibold text-center">
                   {icon.title}
                 </div>
               
-                <div className="text-xs opacity-70 mt-1 text-center">
-                  {icon.groups[icon.currentGroupIndex]?.name}
+                <div className="text-[10px] opacity-70 mt-1 text-center">
+                  {group?.name}
                 </div>
               </div>
             );
