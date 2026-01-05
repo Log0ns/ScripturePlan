@@ -136,6 +136,27 @@ export default function ScriptureReader() {
   });
   const [revealedHints, setRevealedHints] = useState<{ [key: number]: boolean }>({});
 
+  type PrayerIcon = {
+    id: string;
+    title: string;
+    groups: string[][];
+    currentGroupIndex: number;
+    readToday: boolean;
+  };
+
+  type EditingIcon =
+    | { type: 'scripture'; id: string }
+    | { type: 'prayer'; id: string }
+    | null;
+
+  const [prayerIcons, setPrayerIcons] = useState<PrayerIcon[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('prayerIcons');
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  });
+
   type Question = {
     id: number;
     gradient: string;
@@ -247,6 +268,10 @@ export default function ScriptureReader() {
       requiredDays: 63,
     },
   ];
+
+  useEffect(() => {
+    localStorage.setItem('prayerIcons', JSON.stringify(prayerIcons));
+  }, [prayerIcons]);
 
   useEffect(() => {
     loadData();
@@ -470,6 +495,12 @@ export default function ScriptureReader() {
                       localStorage.setItem('icons', JSON.stringify(updated));
                       return updated;
                     });
+                    
+                    setPrayerIcons(prev => {
+                      const updated = prev.map(icon => ({ ...icon, readToday: false }));
+                      localStorage.setItem('prayerIcons', JSON.stringify(updated));
+                      return updated;
+                    });
                   }}
                   className="bg-yellow-300 text-yellow-900 px-3 py-1 rounded-lg shadow hover:bg-yellow-400"
                   title="Reset today's readings"
@@ -582,6 +613,65 @@ export default function ScriptureReader() {
               )}
             </div>
           </div>
+        </div>
+        <h2 className="text-xl font-semibold mt-10 mb-4">Prayer</h2>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {prayerIcons.map((icon) => {
+            const currentGroup = icon.groups[icon.currentGroupIndex] || [];
+        
+            return (
+              <div
+                key={icon.id}
+                onClick={() => {
+                  setPrayerIcons(prev =>
+                    prev.map(p =>
+                      p.id === icon.id
+                        ? {
+                            ...p,
+                            readToday: true,
+                            currentGroupIndex:
+                              (p.currentGroupIndex + 1) % p.groups.length,
+                          }
+                        : p
+                    )
+                  );
+                }}
+                className={`relative p-4 rounded-xl shadow cursor-pointer select-none transition
+                  ${icon.readToday ? 'ring-4 ring-emerald-400 glow' : 'bg-white'}
+                `}
+              >
+                <h3 className="font-semibold text-center">{icon.title}</h3>
+        
+                <div className="mt-2 text-sm text-center space-y-1">
+                  {currentGroup.map((name, i) => (
+                    <div key={i}>{name}</div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        
+          {/* Add Prayer Icon */}
+          {prayerIcons.length < 10 && (
+            <button
+              onClick={() => {
+                setPrayerIcons(prev => [
+                  ...prev,
+                  {
+                    id: crypto.randomUUID(),
+                    title: 'Prayer',
+                    groups: [['Name 1']],
+                    currentGroupIndex: 0,
+                    readToday: false,
+                  },
+                ]);
+              }}
+              className="flex items-center justify-center rounded-xl border-2 border-dashed text-3xl text-gray-400 hover:text-gray-600"
+            >
+              +
+            </button>
+          )}
         </div>
       </div>
       
@@ -763,6 +853,48 @@ export default function ScriptureReader() {
           </div>
         </div>
       )}
+
+      {/* Prayer Settings Modal */}
+      {editingPrayerIcon.groups.map((group, gi) => (
+        <div key={gi} className="border rounded p-3 mb-3">
+          <h4 className="font-semibold">Group {gi + 1}</h4>
+      
+          {group.map((name, ni) => (
+            <input
+              key={ni}
+              value={name}
+              onChange={(e) => {
+                const updated = [...editingPrayerIcon.groups];
+                updated[gi][ni] = e.target.value;
+                setEditingPrayerIcon({ ...editingPrayerIcon, groups: updated });
+              }}
+              className="w-full border rounded px-2 py-1 mt-1"
+            />
+          ))}
+      
+          <button
+            onClick={() => {
+              const updated = [...editingPrayerIcon.groups];
+              updated[gi].push('');
+              setEditingPrayerIcon({ ...editingPrayerIcon, groups: updated });
+            }}
+            className="text-sm text-blue-600 mt-2"
+          >
+            + Add Name
+          </button>
+
+          <button
+            onClick={() =>
+              setEditingPrayerIcon({
+                ...editingPrayerIcon,
+                groups: [...editingPrayerIcon.groups, ['']],
+              })
+            }
+          >
+            + Add Group
+          </button>
+        </div>
+      ))}
 
       {/* Settings Modal */}
       {showSettings && selectedIcon && (
