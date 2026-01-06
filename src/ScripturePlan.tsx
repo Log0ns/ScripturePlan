@@ -627,7 +627,7 @@ export default function ScriptureReader() {
             <div className="grid grid-cols-2 gap-6">
               {prayerIcons.map((icon) => {
                 const group = icon.groups[icon.currentGroupIndex];
-              
+        
                 return (
                   <div
                     key={icon.id}
@@ -646,6 +646,7 @@ export default function ScriptureReader() {
                       e.currentTarget.addEventListener('touchmove', cancel, { once: true });
                     }}
                     onTouchEnd={(e) => {
+                      e.preventDefault();
                       // Regular tap - advance group
                       setPrayerIcons(prev =>
                         prev.map(p =>
@@ -696,30 +697,30 @@ export default function ScriptureReader() {
                   </div>
                 );
               })}
-        
-          {/* Add Prayer Icon */}
-          {prayerIcons.length < 10 && (
-            <button
-              onClick={() => {
-                setPrayerIcons(prev => [
-                  ...prev,
-                  {
-                    id: Date.now(),
-                    title: 'Prayer',
-                    groups: [{ name: 'Group', people: [''] }],
-                    currentGroupIndex: 0,
-                    readToday: false,
-                  },
-                ]);
-              }}
-              className={`aspect-square ${getIconColor(timeOfDay)} backdrop-blur-md rounded-2xl shadow-xl flex items-center justify-center cursor-pointer hover:bg-opacity-95 active:scale-95 transition-all border-2 border-dashed border-white border-opacity-40`}
-            >
-              <Plus className="w-10 h-10 text-slate-400" />
-            </button>
-          )}
+              
+              {/* Add Prayer Icon button */}
+              {prayerIcons.length < 10 && (
+                <button
+                  onClick={() => {
+                    setPrayerIcons(prev => [
+                      ...prev,
+                      {
+                        id: Date.now(),
+                        title: 'Prayer',
+                        groups: [{ name: 'Group', people: [''] }],
+                        currentGroupIndex: 0,
+                        readToday: false,
+                      },
+                    ]);
+                  }}
+                  className={`aspect-square ${getIconColor(timeOfDay)} backdrop-blur-md rounded-2xl shadow-xl flex items-center justify-center cursor-pointer hover:bg-opacity-95 active:scale-95 transition-all border-2 border-dashed border-white border-opacity-40`}
+                >
+                  <Plus className="w-10 h-10 text-slate-400" />
+                </button>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
       
       {/* QUESTIONS SCREEN (overlay, slides in) */}
       <div
