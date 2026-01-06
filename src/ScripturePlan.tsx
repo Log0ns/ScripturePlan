@@ -621,8 +621,11 @@ export default function ScriptureReader() {
           </div>
         </div>
         
-        <div className="grid grid-cols-2 gap-6 justify-center mt-8">
-          {prayerIcons.map((icon) => {
+        {/* Prayer Icons Grid */}
+        <div className="flex-1 px-8 pb-20 relative z-10 flex items-center justify-center">
+          <div className="w-full max-w-md">
+            <div className="grid grid-cols-2 gap-6">
+              {prayerIcons.map((icon) => {
             const group = icon.groups[icon.currentGroupIndex];
           
             return (
@@ -685,13 +688,14 @@ export default function ScriptureReader() {
                   },
                 ]);
               }}
-              className="flex items-center justify-center rounded-xl border-2 border-dashed text-3xl text-gray-400 hover:text-gray-600"
+              className={`aspect-square ${getIconColor(timeOfDay)} backdrop-blur-md rounded-2xl shadow-xl flex items-center justify-center cursor-pointer hover:bg-opacity-95 active:scale-95 transition-all border-2 border-dashed border-white border-opacity-40`}
             >
-              +
+              <Plus className="w-10 h-10 text-slate-400" />
             </button>
           )}
         </div>
       </div>
+    </div>
       
       {/* QUESTIONS SCREEN (overlay, slides in) */}
       <div
