@@ -952,7 +952,7 @@ export default function ScriptureReader() {
                     .map(n => n.trim())
                     .filter(Boolean);
             
-                  // IMPORTANT: never allow empty list
+                  // Prevent empty list (avoids crashes)
                   if (names.length === 0) return;
             
                   setPrayerIcons(prev =>
@@ -961,7 +961,7 @@ export default function ScriptureReader() {
                         ? {
                             ...icon,
                             names,
-                            currentIndex: 0, // reset cycle safely
+                            currentIndex: 0,
                           }
                         : icon
                     )
@@ -977,6 +977,9 @@ export default function ScriptureReader() {
                 The prayer tile will cycle through these names each time you tap it.
               </p>
             </div>
+          </div>
+        </div>
+      )}
 
       {/* Settings Modal */}
       {showSettings && selectedIcon && (
