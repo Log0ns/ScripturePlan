@@ -475,7 +475,7 @@ export default function ScriptureReader() {
         <div className="flex-1 px-8 py-20 relative z-10 flex items-center justify-center">
           <div className="w-full max-w-md">
             {/* buttons fixed to bottom-right */}
-            <div className="fixed bottom-6 right-6 flex flex-col items-end space-y-4 z-100 pointer-events-none">
+            <div className="fixed bottom-6 right-6 flex flex-col items-end space-y-4 z-[100] pointer-events-none">
 
               {/* Sun Button with Counter */}
               <div className="flex items-center space-x-2 pointer-events-auto">
