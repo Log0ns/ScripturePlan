@@ -86,8 +86,8 @@ type PrayerGroup = {
 type PrayerIcon = {
   id: number;
   title: string;
-  groups: PrayerGroup[];
-  currentGroupIndex: number;
+  names: string[];
+  currentIndex: number;
   readToday: boolean;
 };
 
@@ -384,6 +384,20 @@ export default function ScriptureReader() {
     return { ...icon, bookIndex, chapter };
   };
 
+  const advancePrayer = (icon: PrayerIcon) => {
+    setPrayerIcons(prev =>
+      prev.map(p =>
+        p.id === icon.id
+          ? {
+              ...p,
+              readToday: true,
+              currentIndex: (p.currentIndex + 1) % p.names.length,
+            }
+          : p
+      )
+    );
+  };
+
   const handleTap = (icon) => {
     const updated = advanceChapter(icon);
     const updatedIcons = icons.map(i =>
@@ -475,7 +489,7 @@ export default function ScriptureReader() {
         <div className="flex-1 px-8 py-20 relative z-10 flex items-center justify-center">
           <div className="w-full max-w-md">
             {/* buttons fixed to bottom-right */}
-            <div className="fixed bottom-6 right-6 flex flex-col items-end space-y-4 z-[100] pointer-events-none">
+            <div className="fixed bottom-6 right-6 flex flex-col items-end space-y-4 z-[100] pointer-events-auto">
 
               {/* Sun Button with Counter */}
               <div className="flex items-center space-x-2 pointer-events-auto">
@@ -549,48 +563,42 @@ export default function ScriptureReader() {
                   onTouchStart={(e) => {
                     setTouchMoved(false);
                     setLongPressTriggered(false);
-                    e.target.dataset.startTime = e.timeStamp;
                     const timer = setTimeout(() => {
                       setLongPressTriggered(true);
-                      handleLongPress(icon);
+                      setSelectedPrayerIcon(icon);
+                      setShowPrayerSettings(true);
                     }, 500);
                     setLongPressTimer(timer);
                   }}
+                  
                   onTouchMove={() => {
                     setTouchMoved(true);
-                    if (longPressTimer) {
-                      clearTimeout(longPressTimer);
-                      setLongPressTimer(null);
-                    }
+                    if (longPressTimer) clearTimeout(longPressTimer);
                   }}
+                  
                   onTouchEnd={(e) => {
                     e.preventDefault();
-                    if (longPressTimer) {
-                      clearTimeout(longPressTimer);
-                      setLongPressTimer(null);
-                    }
-                    if (!touchMoved && !longPressTriggered) handleTap(icon);
+                    if (longPressTimer) clearTimeout(longPressTimer);
+                    if (!touchMoved && !longPressTriggered) advancePrayer(icon);
                   }}
+                  
                   onMouseDown={() => {
                     setLongPressTriggered(false);
                     const timer = setTimeout(() => {
                       setLongPressTriggered(true);
-                      handleLongPress(icon);
+                      setSelectedPrayerIcon(icon);
+                      setShowPrayerSettings(true);
                     }, 500);
                     setLongPressTimer(timer);
                   }}
+                  
                   onMouseUp={() => {
-                    if (longPressTimer) {
-                      clearTimeout(longPressTimer);
-                      setLongPressTimer(null);
-                    }
-                    if (!longPressTriggered) handleTap(icon);
+                    if (longPressTimer) clearTimeout(longPressTimer);
+                    if (!longPressTriggered) advancePrayer(icon);
                   }}
+                  
                   onMouseLeave={() => {
-                    if (longPressTimer) {
-                      clearTimeout(longPressTimer);
-                      setLongPressTimer(null);
-                    }
+                    if (longPressTimer) clearTimeout(longPressTimer);
                   }}
                 >
                   <div className="text-center px-3">
@@ -671,18 +679,18 @@ export default function ScriptureReader() {
                       e.currentTarget.addEventListener('mouseup', cancel, { once: true });
                       e.currentTarget.addEventListener('mouseleave', cancel, { once: true });
                     }}
-                    onClick={(e) => {
-                      // Regular click - advance group
+                    onClick={() => {
                       setPrayerIcons(prev =>
-                        prev.map(p =>
-                          p.id === icon.id
-                            ? {
-                                ...p,
-                                readToday: true,
-                                currentGroupIndex: (p.currentGroupIndex + 1) % p.groups.length,
-                              }
-                            : p
-                        )
+                        prev.map(p => {
+                          if (p.id !== icon.id) return p;
+                          if (p.names.length === 0) return p;
+                    
+                          return {
+                            ...p,
+                            readToday: true,
+                            currentIndex: (p.currentIndex + 1) % p.names.length,
+                          };
+                        })
                       );
                     }}
                   >
@@ -691,7 +699,7 @@ export default function ScriptureReader() {
                         {icon.title}
                       </div>
                       <div className="text-xs text-slate-500 mt-1">
-                        {group?.name}
+                        {icon.names[icon.currentIndex]}
                       </div>
                     </div>
                   </div>
@@ -906,8 +914,17 @@ export default function ScriptureReader() {
       {showPrayerSettings && selectedPrayerIcon && (
         <div className="fixed inset-0 bg-black/40 flex items-end z-50">
           <div className="bg-white w-full rounded-t-3xl p-6 pb-8 max-h-[80vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-medium text-slate-800">Prayer Settings</h2>
+            <div className="mb-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-medium text-slate-800">Prayer Settings</h2>
+                <button
+                  onClick={() => setShowPrayerSettings(false)}
+                  className="text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            
               <input
                 value={selectedPrayerIcon.title}
                 onChange={(e) => {
@@ -922,14 +939,9 @@ export default function ScriptureReader() {
                     prev ? { ...prev, title: e.target.value } : prev
                   );
                 }}
-                className="w-full text-lg font-semibold border rounded px-3 py-2 mb-4"
+                className="w-full text-lg font-semibold border rounded px-3 py-2"
+                placeholder="Prayer name"
               />
-              <button
-                onClick={() => setShowPrayerSettings(false)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X className="w-6 h-6" />
-              </button>
             </div>
       
             {selectedPrayerIcon.groups.map((group, groupIndex) => (
