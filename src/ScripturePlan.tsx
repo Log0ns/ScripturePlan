@@ -721,6 +721,7 @@ export default function ScriptureReader() {
             </div>
           </div>
         </div>
+      </div>
       
       {/* QUESTIONS SCREEN (overlay, slides in) */}
       <div
