@@ -78,11 +78,6 @@ const DEFAULT_ICONS = [
   { id: 2, bookIndex: 39, chapter: 1, startBook: 39, startChapter: 1, endBook: 65, endChapter: 22, readToday: false }
 ];
 
-type PrayerGroup = {
-  name: string;
-  people: string[];
-};
-
 type PrayerIcon = {
   id: number;
   title: string;
@@ -384,10 +379,10 @@ export default function ScriptureReader() {
     return { ...icon, bookIndex, chapter };
   };
 
-  const advancePrayer = (icon: PrayerIcon) => {
+  const advancePrayer = (id: number) => {
     setPrayerIcons(prev =>
       prev.map(p =>
-        p.id === icon.id
+        p.id === id && p.names.length > 0
           ? {
               ...p,
               readToday: true,
@@ -634,8 +629,6 @@ export default function ScriptureReader() {
           <div className="w-full max-w-md">
             <div className="grid grid-cols-2 gap-6">
               {prayerIcons.map((icon) => {
-                const group = icon.groups[icon.currentGroupIndex];
-        
                 return (
                   <div
                     key={icon.id}
@@ -655,14 +648,14 @@ export default function ScriptureReader() {
                     }}
                     onTouchEnd={(e) => {
                       e.preventDefault();
-                      // Regular tap - advance group
+                      // Regular tap - advance
                       setPrayerIcons(prev =>
                         prev.map(p =>
                           p.id === icon.id
                             ? {
                                 ...p,
                                 readToday: true,
-                                currentGroupIndex: (p.currentGroupIndex + 1) % p.groups.length,
+                                currentIndex: (p.currentIndex + 1) % p.names.length,
                               }
                             : p
                         )
@@ -715,8 +708,8 @@ export default function ScriptureReader() {
                       {
                         id: Date.now(),
                         title: 'Prayer',
-                        groups: [{ name: 'Group', people: [''] }],
-                        currentGroupIndex: 0,
+                        names: ['Name'],
+                        currentIndex: 0,
                         readToday: false,
                       },
                     ]);
@@ -944,129 +937,46 @@ export default function ScriptureReader() {
               />
             </div>
       
-            {selectedPrayerIcon.groups.map((group, groupIndex) => (
-              <div key={groupIndex} className="mb-4 p-3 rounded-xl bg-slate-100">
-                
-                {/* Group name */}
-                <input
-                  className="w-full text-sm font-semibold mb-2 bg-white rounded p-2"
-                  value={group.name}
-                  onChange={(e) => {
-                    setPrayerIcons(prev =>
-                      prev.map(icon =>
-                        icon.id === selectedPrayerIcon.id
-                          ? {
-                              ...icon,
-                              groups: icon.groups.map((g, i) =>
-                                i === groupIndex
-                                  ? { ...g, name: e.target.value }
-                                  : g
-                              ),
-                            }
-                          : icon
-                      )
-                    );
-                  }}
-                />
+            <div className="mb-4 p-3 rounded-xl bg-slate-100">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                People to pray for (one per line)
+              </label>
             
-                {/* People list */}
-                <textarea
-                  className="w-full text-xs bg-white rounded p-2"
-                  rows={4}
-                  value={group.people.join('\n')}
-                  onChange={(e) => {
-                    const people = e.target.value
-                      .split('\n')
-                      .map(p => p.trim())
-                      .filter(Boolean);
+              <textarea
+                className="w-full text-xs bg-white rounded p-2"
+                rows={6}
+                value={selectedPrayerIcon.names.join('\n')}
+                onChange={(e) => {
+                  const names = e.target.value
+                    .split('\n')
+                    .map(n => n.trim())
+                    .filter(Boolean);
             
-                    setPrayerIcons(prev =>
-                      prev.map(icon =>
-                        icon.id === selectedPrayerIcon.id
-                          ? {
-                              ...icon,
-                              groups: icon.groups.map((g, i) =>
-                                i === groupIndex
-                                  ? { ...g, people }
-                                  : g
-                              ),
-                            }
-                          : icon
-                      )
-                    );
-                  }}
-                />
-      
-                <button
-                  onClick={() => {
-                    const updatedGroups = selectedPrayerIcon.groups.map((g, idx) =>
-                      idx === gi ? [...g, ''] : g
-                    );
-      
-                    setPrayerIcons(prev =>
-                      prev.map(p =>
-                        p.id === selectedPrayerIcon.id
-                          ? { ...p, groups: updatedGroups }
-                          : p
-                      )
-                    );
-      
-                    setSelectedPrayerIcon(prev =>
-                      prev ? { ...prev, groups: updatedGroups } : prev
-                    );
-                  }}
-                  className="text-sm text-blue-600"
-                >
-                  + Add Name
-                </button>
-
-                <button
-                  className="mt-2 text-xs text-red-600"
-                  onClick={() => {
-                    setPrayerIcons(prev =>
-                      prev.map(icon => {
-                        if (icon.id !== selectedPrayerIcon.id) return icon;
-                
-                        const newGroups = icon.groups.filter((_, i) => i !== groupIndex);
-                
-                        return {
-                          ...icon,
-                          groups: newGroups,
-                          currentGroupIndex: Math.min(
-                            icon.currentGroupIndex,
-                            newGroups.length - 1
-                          ),
-                        };
-                      })
-                    );
-                  }}
-                >
-                  Delete group
-                </button>
-              </div>
-            ))}
-      
-            <button
-              onClick={() => {
-                const updatedGroups = [...selectedPrayerIcon.groups, ['']];
-                setPrayerIcons(prev =>
-                  prev.map(p =>
-                    p.id === selectedPrayerIcon.id
-                      ? { ...p, groups: updatedGroups }
-                      : p
-                  )
-                );
-                setSelectedPrayerIcon(prev =>
-                  prev ? { ...prev, groups: updatedGroups } : prev
-                );
-              }}
-              className="text-blue-600 text-sm"
-            >
-              + Add Group
-            </button>
-          </div>
-        </div>
-      )}
+                  // IMPORTANT: never allow empty list
+                  if (names.length === 0) return;
+            
+                  setPrayerIcons(prev =>
+                    prev.map(icon =>
+                      icon.id === selectedPrayerIcon.id
+                        ? {
+                            ...icon,
+                            names,
+                            currentIndex: 0, // reset cycle safely
+                          }
+                        : icon
+                    )
+                  );
+            
+                  setSelectedPrayerIcon(prev =>
+                    prev ? { ...prev, names, currentIndex: 0 } : prev
+                  );
+                }}
+              />
+            
+              <p className="mt-2 text-xs text-slate-500">
+                The prayer tile will cycle through these names each time you tap it.
+              </p>
+            </div>
 
       {/* Settings Modal */}
       {showSettings && selectedIcon && (
