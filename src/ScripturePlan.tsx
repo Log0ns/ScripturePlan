@@ -626,52 +626,76 @@ export default function ScriptureReader() {
           <div className="w-full max-w-md">
             <div className="grid grid-cols-2 gap-6">
               {prayerIcons.map((icon) => {
-            const group = icon.groups[icon.currentGroupIndex];
-          
-            return (
-              <div
-                key={icon.id}
-                onClick={() => {
-                  setPrayerIcons(prev =>
-                    prev.map(p =>
-                      p.id === icon.id
-                        ? {
-                            ...p,
-                            readToday: true,
-                            currentGroupIndex:
-                              (p.currentGroupIndex + 1) % p.groups.length,
-                          }
-                        : p
-                    )
-                  );
-                }}
-                onPointerDown={(e) => {
-                  if (e.pointerType !== 'touch') return;
+                const group = icon.groups[icon.currentGroupIndex];
               
-                  const timer = setTimeout(() => {
-                    setSelectedPrayerIcon(icon);
-                    setShowPrayerSettings(true);
-                  }, 600);
-              
-                  const cancel = () => clearTimeout(timer);
-              
-                  e.currentTarget.addEventListener('pointerup', cancel, { once: true });
-                  e.currentTarget.addEventListener('pointerleave', cancel, { once: true });
-                }}
-                className={`aspect-square ${getIconColor(timeOfDay)} backdrop-blur-md rounded-2xl flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-all
-                    ${icon.readToday ? 'ring-4 ring-yellow-400 shadow-yellow-400/50' : 'shadow-xl'}
-                `}
-              >
-                <div className="text-sm font-semibold text-center">
-                  {icon.title}
-                </div>
-              
-                <div className="text-[10px] opacity-70 mt-1 text-center">
-                  {group?.name}
-                </div>
-              </div>
-            );
-          })}
+                return (
+                  <div
+                    key={icon.id}
+                    className={`aspect-square ${getIconColor(timeOfDay)} backdrop-blur-md rounded-2xl flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-all
+                        ${icon.readToday ? 'ring-4 ring-yellow-400 shadow-yellow-400/50' : 'shadow-xl'}
+                    `}
+                    // Mobile touch handlers
+                    onTouchStart={(e) => {
+                      const timer = setTimeout(() => {
+                        setSelectedPrayerIcon(icon);
+                        setShowPrayerSettings(true);
+                      }, 500);
+                      
+                      const cancel = () => clearTimeout(timer);
+                      e.currentTarget.addEventListener('touchend', cancel, { once: true });
+                      e.currentTarget.addEventListener('touchmove', cancel, { once: true });
+                    }}
+                    onTouchEnd={(e) => {
+                      // Regular tap - advance group
+                      setPrayerIcons(prev =>
+                        prev.map(p =>
+                          p.id === icon.id
+                            ? {
+                                ...p,
+                                readToday: true,
+                                currentGroupIndex: (p.currentGroupIndex + 1) % p.groups.length,
+                              }
+                            : p
+                        )
+                      );
+                    }}
+                    // Desktop mouse handlers
+                    onMouseDown={(e) => {
+                      const timer = setTimeout(() => {
+                        setSelectedPrayerIcon(icon);
+                        setShowPrayerSettings(true);
+                      }, 500);
+                      
+                      const cancel = () => clearTimeout(timer);
+                      e.currentTarget.addEventListener('mouseup', cancel, { once: true });
+                      e.currentTarget.addEventListener('mouseleave', cancel, { once: true });
+                    }}
+                    onClick={(e) => {
+                      // Regular click - advance group
+                      setPrayerIcons(prev =>
+                        prev.map(p =>
+                          p.id === icon.id
+                            ? {
+                                ...p,
+                                readToday: true,
+                                currentGroupIndex: (p.currentGroupIndex + 1) % p.groups.length,
+                              }
+                            : p
+                        )
+                      );
+                    }}
+                  >
+                    <div className="text-center px-3">
+                      <div className="text-sm font-semibold text-slate-700">
+                        {icon.title}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-1">
+                        {group?.name}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
         
           {/* Add Prayer Icon */}
           {prayerIcons.length < 10 && (
