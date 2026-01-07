@@ -586,7 +586,7 @@ export default function ScriptureReader() {
                     bg-white/70
                     flex items-center justify-center
                     transition-all
-                    ${tile.activeToday
+                    ${icon.readToday
                       ? 'ring-4 ring-yellow-400 shadow-yellow-400/50'
                       : 'shadow-xl'}
                   `}
