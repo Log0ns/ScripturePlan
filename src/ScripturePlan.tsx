@@ -581,8 +581,14 @@ export default function ScriptureReader() {
               {icons.map(icon => (
                 <div
                   key={icon.id}
-                  className={`aspect-square ${getIconColor(timeOfDay)} backdrop-blur-md rounded-2xl flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-all
-                    ${icon.readToday ? 'ring-4 ring-yellow-400 shadow-yellow-400/50' : 'shadow-xl'}
+                  className={`aspect-square rounded-2xl backdrop-blur-md
+                    ${getIconColor(timeOfDay)}
+                    bg-white/70
+                    flex items-center justify-center
+                    transition-all
+                    ${tile.activeToday
+                      ? 'ring-4 ring-yellow-400 shadow-yellow-400/50'
+                      : 'shadow-xl'}
                   `}
                   onTouchStart={(e) => {
                     setTouchMoved(false);
@@ -659,15 +665,18 @@ export default function ScriptureReader() {
             {/* CUSTOM TILES */}
             <div className="mt-10">
               <h3 className="text-sm font-semibold text-slate-600 mb-3 text-center">
-                Custom Tiles
+                Prayer Tiles
               </h3>
             
               <div className="grid grid-cols-2 gap-6">
                 {customTiles.map(tile => (
                   <div
                     key={tile.id}
-                    className={`aspect-square ${getIconColor(timeOfDay)} backdrop-blur-md rounded-2xl
-                      flex items-center justify-center text-center px-4 cursor-pointer select-none transition-all
+                    className={`aspect-square rounded-2xl backdrop-blur-md
+                      ${getIconColor(timeOfDay)}
+                      bg-white/70
+                      flex items-center justify-center
+                      transition-all
                       ${tile.activeToday
                         ? 'ring-4 ring-yellow-400 shadow-yellow-400/50'
                         : 'shadow-xl'}
