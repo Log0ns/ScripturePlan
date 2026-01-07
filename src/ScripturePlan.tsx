@@ -135,6 +135,9 @@ export default function ScriptureReader() {
     return 0;
   });
   const [revealedHints, setRevealedHints] = useState<{ [key: number]: boolean }>({});
+  const [customTiles, setCustomTiles] = useState<
+      { id: number; label: string }[]
+    >([]);
 
   type Question = {
     id: number;
@@ -262,6 +265,10 @@ export default function ScriptureReader() {
     }
   }, [icons]);
 
+  useEffect(() => {
+    localStorage.setItem('custom-tiles', JSON.stringify(customTiles));
+  }, [customTiles]);
+
   const loadData = () => {
     try {
       const data = localStorage.getItem('scripture-icons');
@@ -269,6 +276,10 @@ export default function ScriptureReader() {
         setIcons(JSON.parse(data));
       } else {
         setIcons(DEFAULT_ICONS);
+      }
+      const savedCustom = localStorage.getItem('custom-tiles');
+      if (savedCustom) {
+        setCustomTiles(JSON.parse(savedCustom));
       }
     } catch (error) {
       setIcons(DEFAULT_ICONS);
@@ -405,6 +416,29 @@ export default function ScriptureReader() {
       setShowSettings(false);
       setSelectedIcon(null);
     }
+  };
+
+  const addCustomTile = () => {
+    if (customTiles.length >= 10) return;
+  
+    const newTile = {
+      id: Math.max(0, ...customTiles.map(t => t.id)) + 1,
+      label: 'New Tile'
+    };
+  
+    setCustomTiles([...customTiles, newTile]);
+  };
+  
+  const deleteCustomTile = (id: number) => {
+    setCustomTiles(customTiles.filter(t => t.id !== id));
+  };
+  
+  const updateCustomTileLabel = (id: number, label: string) => {
+    setCustomTiles(
+      customTiles.map(t =>
+        t.id === id ? { ...t, label } : t
+      )
+    );
   };
 
   const updateIconSettings = (updates) => {
@@ -580,6 +614,53 @@ export default function ScriptureReader() {
                   <Plus className="w-10 h-10 text-slate-400" />
                 </button>
               )}
+            </div>
+            {/* CUSTOM TILES */}
+            <div className="mt-10">
+              <h3 className="text-sm font-semibold text-slate-600 mb-3 text-center">
+                Custom Tiles
+              </h3>
+            
+              <div className="grid grid-cols-2 gap-6">
+                {customTiles.map(tile => (
+                  <div
+                    key={tile.id}
+                    className={`aspect-square ${getIconColor(timeOfDay)} backdrop-blur-md rounded-2xl shadow-xl
+                      flex flex-col items-center justify-center text-center px-4 cursor-pointer`}
+                    onClick={() => {
+                      const newLabel = prompt('Edit tile text:', tile.label);
+                      if (newLabel !== null) {
+                        updateCustomTileLabel(tile.id, newLabel);
+                      }
+                    }}
+                  >
+                    <div className="text-base font-medium text-slate-700">
+                      {tile.label}
+                    </div>
+            
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteCustomTile(tile.id);
+                      }}
+                      className="mt-3 text-xs text-red-500 hover:text-red-700"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+            
+                {customTiles.length < 10 && (
+                  <button
+                    onClick={addCustomTile}
+                    className={`aspect-square ${getIconColor(timeOfDay)} backdrop-blur-md rounded-2xl shadow-xl
+                      flex items-center justify-center cursor-pointer hover:bg-opacity-95
+                      border-2 border-dashed border-white border-opacity-40`}
+                  >
+                    <Plus className="w-10 h-10 text-slate-400" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
