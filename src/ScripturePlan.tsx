@@ -143,6 +143,7 @@ export default function ScriptureReader() {
     id: number;
     items: string[];
     index: number;
+    activeToday: boolean;
   };
   
   const [customTiles, setCustomTiles] = useState<CustomTile[]>([]);
@@ -397,7 +398,12 @@ export default function ScriptureReader() {
   
   const handleCustomTap = (tile: CustomTile) => {
     setCustomTiles(customTiles.map(t =>
-      t.id === tile.id ? advanceCustomTile(t) : t
+      t.id === tile.id
+        ? {
+            ...advanceCustomTile(t),
+            activeToday: true
+          }
+        : t
     ));
   };
   
@@ -452,8 +458,9 @@ export default function ScriptureReader() {
   
     const newTile: CustomTile = {
       id: Math.max(0, ...customTiles.map(t => t.id)) + 1,
-      items: ['New Name'],
-      index: 0
+      items: ['New Item'],
+      index: 0,
+      activeToday: false
     };
   
     setCustomTiles([...customTiles, newTile]);
@@ -534,6 +541,10 @@ export default function ScriptureReader() {
                       localStorage.setItem('icons', JSON.stringify(updated));
                       return updated;
                     });
+
+                    setCustomTiles(prev =>
+                      prev.map(tile => ({ ...tile, activeToday: false }))
+                    );
                   }}
                   className="bg-yellow-300 text-yellow-900 px-3 py-1 rounded-lg shadow hover:bg-yellow-400"
                   title="Reset today's readings"
@@ -655,8 +666,12 @@ export default function ScriptureReader() {
                 {customTiles.map(tile => (
                   <div
                     key={tile.id}
-                    className={`aspect-square ${getIconColor(timeOfDay)} backdrop-blur-md rounded-2xl shadow-xl
-                      flex items-center justify-center text-center px-4 cursor-pointer select-none`}
+                    className={`aspect-square ${getIconColor(timeOfDay)} backdrop-blur-md rounded-2xl
+                      flex items-center justify-center text-center px-4 cursor-pointer select-none transition-all
+                      ${tile.activeToday
+                        ? 'ring-4 ring-yellow-400 shadow-yellow-400/50'
+                        : 'shadow-xl'}
+                    `}
                     onTouchStart={(e) => {
                       setTouchMoved(false);
                       setLongPressTriggered(false);
