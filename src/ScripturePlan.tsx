@@ -110,6 +110,9 @@ export default function ScriptureReader() {
   const [icons, setIcons] = useState([]);
   const [selectedIcon, setSelectedIcon] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showCustomSettings, setShowCustomSettings] = useState(false);
+  const [selectedCustomTile, setSelectedCustomTile] = useState<CustomTile | null>(null);
+  const [customInput, setCustomInput] = useState('');
   const [longPressTimer, setLongPressTimer] = useState(null);
   const [timeOfDay, setTimeOfDay] = useState(getTimeOfDay());
   const [touchMoved, setTouchMoved] = useState(false);
@@ -135,9 +138,14 @@ export default function ScriptureReader() {
     return 0;
   });
   const [revealedHints, setRevealedHints] = useState<{ [key: number]: boolean }>({});
-  const [customTiles, setCustomTiles] = useState<
-      { id: number; label: string }[]
-    >([]);
+  
+  type CustomTile = {
+    id: number;
+    items: string[];
+    index: number;
+  };
+  
+  const [customTiles, setCustomTiles] = useState<CustomTile[]>([]);
 
   type Question = {
     id: number;
@@ -378,6 +386,27 @@ export default function ScriptureReader() {
     setShowSettings(true);
   };
 
+  const advanceCustomTile = (tile: CustomTile) => {
+    if (tile.items.length === 0) return tile;
+  
+    return {
+      ...tile,
+      index: (tile.index + 1) % tile.items.length
+    };
+  };
+  
+  const handleCustomTap = (tile: CustomTile) => {
+    setCustomTiles(customTiles.map(t =>
+      t.id === tile.id ? advanceCustomTile(t) : t
+    ));
+  };
+  
+  const handleCustomLongPress = (tile: CustomTile) => {
+    setSelectedCustomTile(tile);
+    setCustomInput(tile.items.join('\n'));
+    setShowCustomSettings(true);
+  };
+
   const handleTouchStart = (icon) => {
     const timer = setTimeout(() => handleLongPress(icon), 500);
     setLongPressTimer(timer);
@@ -421,9 +450,10 @@ export default function ScriptureReader() {
   const addCustomTile = () => {
     if (customTiles.length >= 10) return;
   
-    const newTile = {
+    const newTile: CustomTile = {
       id: Math.max(0, ...customTiles.map(t => t.id)) + 1,
-      label: 'New Tile'
+      items: ['New Name'],
+      index: 0
     };
   
     setCustomTiles([...customTiles, newTile]);
@@ -626,27 +656,45 @@ export default function ScriptureReader() {
                   <div
                     key={tile.id}
                     className={`aspect-square ${getIconColor(timeOfDay)} backdrop-blur-md rounded-2xl shadow-xl
-                      flex flex-col items-center justify-center text-center px-4 cursor-pointer`}
-                    onClick={() => {
-                      const newLabel = prompt('Edit tile text:', tile.label);
-                      if (newLabel !== null) {
-                        updateCustomTileLabel(tile.id, newLabel);
-                      }
+                      flex items-center justify-center text-center px-4 cursor-pointer select-none`}
+                    onTouchStart={(e) => {
+                      setTouchMoved(false);
+                      setLongPressTriggered(false);
+                      e.target.dataset.startTime = e.timeStamp;
+                      const timer = setTimeout(() => {
+                        setLongPressTriggered(true);
+                        handleCustomLongPress(tile);
+                      }, 500);
+                      setLongPressTimer(timer);
+                    }}
+                    onTouchMove={() => {
+                      setTouchMoved(true);
+                      if (longPressTimer) clearTimeout(longPressTimer);
+                    }}
+                    onTouchEnd={(e) => {
+                      e.preventDefault();
+                      if (longPressTimer) clearTimeout(longPressTimer);
+                      if (!touchMoved && !longPressTriggered) handleCustomTap(tile);
+                    }}
+                    onMouseDown={() => {
+                      setLongPressTriggered(false);
+                      const timer = setTimeout(() => {
+                        setLongPressTriggered(true);
+                        handleCustomLongPress(tile);
+                      }, 500);
+                      setLongPressTimer(timer);
+                    }}
+                    onMouseUp={() => {
+                      if (longPressTimer) clearTimeout(longPressTimer);
+                      if (!longPressTriggered) handleCustomTap(tile);
+                    }}
+                    onMouseLeave={() => {
+                      if (longPressTimer) clearTimeout(longPressTimer);
                     }}
                   >
-                    <div className="text-base font-medium text-slate-700">
-                      {tile.label}
+                    <div className="text-base font-medium text-slate-700 whitespace-pre-wrap">
+                      {tile.items[tile.index] || ''}
                     </div>
-            
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteCustomTile(tile.id);
-                      }}
-                      className="mt-3 text-xs text-red-500 hover:text-red-700"
-                    >
-                      Remove
-                    </button>
                   </div>
                 ))}
             
@@ -994,6 +1042,68 @@ export default function ScriptureReader() {
                 Delete Icon
               </button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Custom Tiles Settings Modal */}
+      {showCustomSettings && selectedCustomTile && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end z-50">
+          <div className="bg-white w-full rounded-t-3xl p-6 pb-8 max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-medium text-slate-800">
+                Custom Tile Settings
+              </h2>
+              <button
+                onClick={() => setShowCustomSettings(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+      
+            <label className="text-sm font-medium text-slate-600 mb-2 block">
+              Tile Items (one per line)
+            </label>
+      
+            <textarea
+              value={customInput}
+              onChange={(e) => setCustomInput(e.target.value)}
+              rows={8}
+              className="w-full p-3 border border-slate-200 rounded-xl text-slate-800"
+            />
+      
+            <button
+              onClick={() => {
+                const items = customInput
+                  .split('\n')
+                  .map(s => s.trim())
+                  .filter(Boolean);
+      
+                setCustomTiles(customTiles.map(t =>
+                  t.id === selectedCustomTile.id
+                    ? { ...t, items, index: 0 }
+                    : t
+                ));
+      
+                setShowCustomSettings(false);
+                setSelectedCustomTile(null);
+              }}
+              className="mt-6 w-full p-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600"
+            >
+              Save
+            </button>
+      
+            <button
+              onClick={() => {
+                setCustomTiles(customTiles.filter(t => t.id !== selectedCustomTile.id));
+                setShowCustomSettings(false);
+                setSelectedCustomTile(null);
+              }}
+              className="mt-3 w-full p-3 bg-red-50 text-red-600 rounded-xl font-medium hover:bg-red-100"
+            >
+              Delete Tile
+            </button>
           </div>
         </div>
       )}
