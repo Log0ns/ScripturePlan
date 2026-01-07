@@ -78,19 +78,6 @@ const DEFAULT_ICONS = [
   { id: 2, bookIndex: 39, chapter: 1, startBook: 39, startChapter: 1, endBook: 65, endChapter: 22, readToday: false }
 ];
 
-type PrayerIcon = {
-  id: number;
-  title: string;
-  names: string[];
-  currentIndex: number;
-  readToday: boolean;
-};
-
-  type EditingIcon =
-    | { type: 'scripture'; id: string }
-    | { type: 'prayer'; id: string }
-    | null;
-
 const getTimeOfDay = () => {
   const hour = new Date().getHours();
   if (hour >= 5 && hour < 12) return 'morning';
@@ -123,8 +110,6 @@ export default function ScriptureReader() {
   const [icons, setIcons] = useState([]);
   const [selectedIcon, setSelectedIcon] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
-  const [selectedPrayerIcon, setSelectedPrayerIcon] = useState<PrayerIcon | null>(null);
-  const [showPrayerSettings, setShowPrayerSettings] = useState(false);
   const [longPressTimer, setLongPressTimer] = useState(null);
   const [timeOfDay, setTimeOfDay] = useState(getTimeOfDay());
   const [touchMoved, setTouchMoved] = useState(false);
@@ -150,13 +135,6 @@ export default function ScriptureReader() {
     return 0;
   });
   const [revealedHints, setRevealedHints] = useState<{ [key: number]: boolean }>({});
-  const [prayerIcons, setPrayerIcons] = useState<PrayerIcon[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('prayerIcons');
-      return saved ? JSON.parse(saved) : [];
-    }
-    return [];
-  });
 
   type Question = {
     id: number;
@@ -271,10 +249,6 @@ export default function ScriptureReader() {
   ];
 
   useEffect(() => {
-    localStorage.setItem('prayerIcons', JSON.stringify(prayerIcons));
-  }, [prayerIcons]);
-
-  useEffect(() => {
     loadData();
     const interval = setInterval(() => {
       setTimeOfDay(getTimeOfDay());
@@ -379,20 +353,6 @@ export default function ScriptureReader() {
     return { ...icon, bookIndex, chapter };
   };
 
-  const advancePrayer = (id: number) => {
-    setPrayerIcons(prev =>
-      prev.map(p =>
-        p.id === id && p.names.length > 0
-          ? {
-              ...p,
-              readToday: true,
-              currentIndex: (p.currentIndex + 1) % p.names.length,
-            }
-          : p
-      )
-    );
-  };
-
   const handleTap = (icon) => {
     const updated = advanceChapter(icon);
     const updatedIcons = icons.map(i =>
@@ -484,7 +444,7 @@ export default function ScriptureReader() {
         <div className="flex-1 px-8 py-20 relative z-10 flex items-center justify-center">
           <div className="w-full max-w-md">
             {/* buttons fixed to bottom-right */}
-            <div className="fixed bottom-6 right-6 flex flex-col items-end space-y-4 z-[100] pointer-events-auto">
+            <div className="fixed bottom-6 right-6 flex flex-col items-end space-y-4 z-50 pointer-events-none">
 
               {/* Sun Button with Counter */}
               <div className="flex items-center space-x-2 pointer-events-auto">
@@ -508,12 +468,6 @@ export default function ScriptureReader() {
                     setIcons(prev => {
                       const updated = prev.map(icon => ({ ...icon, readToday: false }));
                       localStorage.setItem('icons', JSON.stringify(updated));
-                      return updated;
-                    });
-                    
-                    setPrayerIcons(prev => {
-                      const updated = prev.map(icon => ({ ...icon, readToday: false }));
-                      localStorage.setItem('prayerIcons', JSON.stringify(updated));
                       return updated;
                     });
                   }}
@@ -558,42 +512,48 @@ export default function ScriptureReader() {
                   onTouchStart={(e) => {
                     setTouchMoved(false);
                     setLongPressTriggered(false);
+                    e.target.dataset.startTime = e.timeStamp;
                     const timer = setTimeout(() => {
                       setLongPressTriggered(true);
-                      setSelectedPrayerIcon(icon);
-                      setShowPrayerSettings(true);
+                      handleLongPress(icon);
                     }, 500);
                     setLongPressTimer(timer);
                   }}
-                  
                   onTouchMove={() => {
                     setTouchMoved(true);
-                    if (longPressTimer) clearTimeout(longPressTimer);
+                    if (longPressTimer) {
+                      clearTimeout(longPressTimer);
+                      setLongPressTimer(null);
+                    }
                   }}
-                  
                   onTouchEnd={(e) => {
                     e.preventDefault();
-                    if (longPressTimer) clearTimeout(longPressTimer);
-                    if (!touchMoved && !longPressTriggered) advancePrayer(icon);
+                    if (longPressTimer) {
+                      clearTimeout(longPressTimer);
+                      setLongPressTimer(null);
+                    }
+                    if (!touchMoved && !longPressTriggered) handleTap(icon);
                   }}
-                  
                   onMouseDown={() => {
                     setLongPressTriggered(false);
                     const timer = setTimeout(() => {
                       setLongPressTriggered(true);
-                      setSelectedPrayerIcon(icon);
-                      setShowPrayerSettings(true);
+                      handleLongPress(icon);
                     }, 500);
                     setLongPressTimer(timer);
                   }}
-                  
                   onMouseUp={() => {
-                    if (longPressTimer) clearTimeout(longPressTimer);
-                    if (!longPressTriggered) advancePrayer(icon);
+                    if (longPressTimer) {
+                      clearTimeout(longPressTimer);
+                      setLongPressTimer(null);
+                    }
+                    if (!longPressTriggered) handleTap(icon);
                   }}
-                  
                   onMouseLeave={() => {
-                    if (longPressTimer) clearTimeout(longPressTimer);
+                    if (longPressTimer) {
+                      clearTimeout(longPressTimer);
+                      setLongPressTimer(null);
+                    }
                   }}
                 >
                   <div className="text-center px-3">
@@ -615,105 +575,6 @@ export default function ScriptureReader() {
               {icons.length < 10 && (
                 <button
                   onClick={addIcon}
-                  className={`aspect-square ${getIconColor(timeOfDay)} backdrop-blur-md rounded-2xl shadow-xl flex items-center justify-center cursor-pointer hover:bg-opacity-95 active:scale-95 transition-all border-2 border-dashed border-white border-opacity-40`}
-                >
-                  <Plus className="w-10 h-10 text-slate-400" />
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-        
-        {/* Prayer Icons Grid */}
-        <div className="flex-1 px-8 pb-20 relative z-10 flex items-center justify-center">
-          <div className="w-full max-w-md">
-            <div className="grid grid-cols-2 gap-6">
-              {prayerIcons.map((icon) => {
-                return (
-                  <div
-                    key={icon.id}
-                    className={`aspect-square ${getIconColor(timeOfDay)} backdrop-blur-md rounded-2xl flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-all
-                        ${icon.readToday ? 'ring-4 ring-yellow-400 shadow-yellow-400/50' : 'shadow-xl'}
-                    `}
-                    // Mobile touch handlers
-                    onTouchStart={(e) => {
-                      const timer = setTimeout(() => {
-                        setSelectedPrayerIcon(icon);
-                        setShowPrayerSettings(true);
-                      }, 500);
-                      
-                      const cancel = () => clearTimeout(timer);
-                      e.currentTarget.addEventListener('touchend', cancel, { once: true });
-                      e.currentTarget.addEventListener('touchmove', cancel, { once: true });
-                    }}
-                    onTouchEnd={(e) => {
-                      e.preventDefault();
-                      // Regular tap - advance
-                      setPrayerIcons(prev =>
-                        prev.map(p =>
-                          p.id === icon.id
-                            ? {
-                                ...p,
-                                readToday: true,
-                                currentIndex: (p.currentIndex + 1) % p.names.length,
-                              }
-                            : p
-                        )
-                      );
-                    }}
-                    // Desktop mouse handlers
-                    onMouseDown={(e) => {
-                      const timer = setTimeout(() => {
-                        setSelectedPrayerIcon(icon);
-                        setShowPrayerSettings(true);
-                      }, 500);
-                      
-                      const cancel = () => clearTimeout(timer);
-                      e.currentTarget.addEventListener('mouseup', cancel, { once: true });
-                      e.currentTarget.addEventListener('mouseleave', cancel, { once: true });
-                    }}
-                    onClick={() => {
-                      setPrayerIcons(prev =>
-                        prev.map(p => {
-                          if (p.id !== icon.id) return p;
-                          if (p.names.length === 0) return p;
-                    
-                          return {
-                            ...p,
-                            readToday: true,
-                            currentIndex: (p.currentIndex + 1) % p.names.length,
-                          };
-                        })
-                      );
-                    }}
-                  >
-                    <div className="text-center px-3">
-                      <div className="text-sm font-semibold text-slate-700">
-                        {icon.title}
-                      </div>
-                      <div className="text-xs text-slate-500 mt-1">
-                        {icon.names[icon.currentIndex]}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-              
-              {/* Add Prayer Icon button */}
-              {prayerIcons.length < 10 && (
-                <button
-                  onClick={() => {
-                    setPrayerIcons(prev => [
-                      ...prev,
-                      {
-                        id: Date.now(),
-                        title: 'Prayer',
-                        names: ['Name'],
-                        currentIndex: 0,
-                        readToday: false,
-                      },
-                    ]);
-                  }}
                   className={`aspect-square ${getIconColor(timeOfDay)} backdrop-blur-md rounded-2xl shadow-xl flex items-center justify-center cursor-pointer hover:bg-opacity-95 active:scale-95 transition-all border-2 border-dashed border-white border-opacity-40`}
                 >
                   <Plus className="w-10 h-10 text-slate-400" />
@@ -898,84 +759,6 @@ export default function ScriptureReader() {
               >
                 Reset Day Counter
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Prayer Settings Modal */}
-      {showPrayerSettings && selectedPrayerIcon && (
-        <div className="fixed inset-0 bg-black/40 flex items-end z-50">
-          <div className="bg-white w-full rounded-t-3xl p-6 pb-8 max-h-[80vh] overflow-y-auto">
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-medium text-slate-800">Prayer Settings</h2>
-                <button
-                  onClick={() => setShowPrayerSettings(false)}
-                  className="text-slate-400 hover:text-slate-600"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-            
-              <input
-                value={selectedPrayerIcon.title}
-                onChange={(e) => {
-                  setPrayerIcons(prev =>
-                    prev.map(p =>
-                      p.id === selectedPrayerIcon.id
-                        ? { ...p, title: e.target.value }
-                        : p
-                    )
-                  );
-                  setSelectedPrayerIcon(prev =>
-                    prev ? { ...prev, title: e.target.value } : prev
-                  );
-                }}
-                className="w-full text-lg font-semibold border rounded px-3 py-2"
-                placeholder="Prayer name"
-              />
-            </div>
-      
-            <div className="mb-4 p-3 rounded-xl bg-slate-100">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                People to pray for (one per line)
-              </label>
-            
-              <textarea
-                className="w-full text-xs bg-white rounded p-2"
-                rows={6}
-                value={selectedPrayerIcon.names.join('\n')}
-                onChange={(e) => {
-                  const names = e.target.value
-                    .split('\n')
-                    .map(n => n.trim())
-                    .filter(Boolean);
-            
-                  // Prevent empty list (avoids crashes)
-                  if (names.length === 0) return;
-            
-                  setPrayerIcons(prev =>
-                    prev.map(icon =>
-                      icon.id === selectedPrayerIcon.id
-                        ? {
-                            ...icon,
-                            names,
-                            currentIndex: 0,
-                          }
-                        : icon
-                    )
-                  );
-            
-                  setSelectedPrayerIcon(prev =>
-                    prev ? { ...prev, names, currentIndex: 0 } : prev
-                  );
-                }}
-              />
-            
-              <p className="mt-2 text-xs text-slate-500">
-                The prayer tile will cycle through these names each time you tap it.
-              </p>
             </div>
           </div>
         </div>
