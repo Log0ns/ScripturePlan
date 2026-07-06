@@ -37,9 +37,9 @@ export const getTileTextColor = (timeOfDay: TimeOfDay): { primary: string; secon
 
 export const getRingStyle = (timeOfDay: TimeOfDay): string => {
   const styles: Record<TimeOfDay, string> = {
-    morning: 'ring-teal-500 shadow-lg shadow-teal-500/30',
-    afternoon: 'ring-rose-400 shadow-lg shadow-rose-400/30',
-    evening: 'ring-emerald-400 shadow-lg shadow-emerald-400/30',
+    morning: 'ring-rose-500 shadow-lg shadow-rose-500/30',
+    afternoon: 'ring-teal-600 shadow-lg shadow-teal-600/30',
+    evening: 'ring-orange-500 shadow-lg shadow-orange-500/30',
     night: 'ring-amber-400 shadow-lg shadow-amber-400/30',
   };
   return styles[timeOfDay];
