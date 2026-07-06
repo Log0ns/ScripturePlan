@@ -40,9 +40,13 @@ export function useFirebaseSync(
     const pull = () => {
       readyToPush.current = false;
       const ref = doc(db, 'users', uid);
+      console.log('[sync] pulling for uid:', uid);
       getDoc(ref).then(snap => {
+        console.log('[sync] doc exists:', snap.exists());
         if (snap.exists()) {
           const remote = snap.data() as RemoteDoc;
+          console.log('[sync] remote lastModified:', remote.lastModified, 'local lastPulledAt:', lastPulledAt.current);
+          console.log('[sync] remote icons:', remote.icons?.length, 'remote daysCompleted:', remote.daysCompleted);
           const remoteTime = remote.lastModified ?? 0;
           if (remoteTime >= lastPulledAt.current) {
             lastPulledAt.current = remoteTime;
@@ -50,11 +54,14 @@ export function useFirebaseSync(
             callbacks.setCustomTiles(remote.customTiles);
             callbacks.setDaysCompleted(remote.daysCompleted);
             callbacks.setLastResetDate(remote.lastResetDate);
+            console.log('[sync] applied remote data');
+          } else {
+            console.log('[sync] skipped pull, local is newer');
           }
         }
         setTimeout(() => { readyToPush.current = true; }, 500);
       }).catch(err => {
-        console.error(err);
+        console.error('[sync] pull error:', err);
         readyToPush.current = true;
       });
     };
