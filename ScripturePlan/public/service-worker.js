@@ -37,6 +37,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  if (request.method !== 'GET') {
+    event.respondWith(fetch(request));
+    return;
+  }
+
   event.respondWith(
     fetch(request)
       .then((response) => {
