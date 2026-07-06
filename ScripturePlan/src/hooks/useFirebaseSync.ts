@@ -29,9 +29,9 @@ export function useFirebaseSync(
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dataRef = useRef(data);
   dataRef.current = data;
-  const lastPulledAt = useRef(() => {
-    try { return Number(localStorage.getItem('planny-lastSync')) || 0; } catch { return 0; }
-  })();
+  const lastPulledAt = useRef(
+    (() => { try { return Number(localStorage.getItem('planny-lastSync')) || 0; } catch { return 0; } })()
+  );
   const persistSyncTime = (t: number) => {
     lastPulledAt.current = t;
     try { localStorage.setItem('planny-lastSync', String(t)); } catch {}
