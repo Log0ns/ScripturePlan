@@ -23,7 +23,7 @@ export default React.memo(function PrayerTile({ tile, timeOfDay, onTap, onLongPr
       className={`aspect-square rounded-2xl
         ${getTileStyle(timeOfDay)}
         flex items-center justify-center
-        ${tile.activeToday ? `ring-2 ${getRingStyle(timeOfDay)}` : 'shadow-md'}
+        ${tile.activeToday ? `ring-4 ${getRingStyle(timeOfDay)}` : 'shadow-md'}
         ${pressing ? 'tile-pressing' : 'tile-idle'}
       `}
       onContextMenu={(e) => { e.preventDefault(); onLongPress(tile); }}
