@@ -29,7 +29,7 @@ export default React.memo(function ReadingTile({ icon, timeOfDay, openOnTap, scr
       className={`aspect-square rounded-2xl relative
         ${getTileStyle(timeOfDay)}
         flex items-center justify-center
-        ${icon.readToday ? `ring-2 ${getRingStyle(timeOfDay)}` : 'shadow-md'}
+        ${icon.readToday ? `ring-4 ${getRingStyle(timeOfDay)}` : 'shadow-md'}
         ${pressing ? 'tile-pressing' : 'tile-idle'}
       `}
       onContextMenu={(e) => { e.preventDefault(); onLongPress(icon); }}
