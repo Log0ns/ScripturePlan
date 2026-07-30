@@ -174,9 +174,12 @@ export default function Planny() {
       <div className="flex-1 overflow-y-auto pb-24">
         <div className="px-6 pt-12 pb-8 max-w-md mx-auto relative">
 
-          {!online && (
-            <div className="absolute top-4 right-6">
-              <WifiOff className={`w-4 h-4 ${isNight ? 'text-slate-500' : 'text-slate-400'}`} />
+          {(!online || (!user && !loading)) && (
+            <div className="absolute top-4 right-6 flex items-center gap-2">
+              {!user && !loading && (
+                <span className={`text-xs ${isNight ? 'text-slate-500' : 'text-slate-400'}`}>not signed in</span>
+              )}
+              {!online && <WifiOff className={`w-4 h-4 ${isNight ? 'text-slate-500' : 'text-slate-400'}`} />}
             </div>
           )}
 
