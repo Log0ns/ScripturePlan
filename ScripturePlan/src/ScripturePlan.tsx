@@ -177,7 +177,7 @@ export default function Planny() {
           {(!online || (!user && !loading)) && (
             <div className="absolute top-4 right-6 flex items-center gap-2">
               {!user && !loading && (
-                <span className={`text-xs ${isNight ? 'text-slate-500' : 'text-slate-400'}`}>not signed in</span>
+                <span className={`text-xs ${isNight ? 'text-slate-500' : 'text-slate-400'}`}>Not signed in</span>
               )}
               {!online && <WifiOff className={`w-4 h-4 ${isNight ? 'text-slate-500' : 'text-slate-400'}`} />}
             </div>
