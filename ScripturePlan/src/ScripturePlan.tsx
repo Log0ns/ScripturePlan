@@ -282,7 +282,7 @@ export default function Planny() {
                 {!online && <WifiOff className={`w-4 h-4 ${isNight ? 'text-slate-500' : 'text-slate-400'}`} />}
               </div>
             )}
-            <div className="flex gap-6 overflow-x-auto">
+            <div className="flex justify-center gap-6 overflow-x-auto">
               <button className={tabLabelClass('reading')} onClick={() => switchTab('reading')}>Reading</button>
               <button className={tabLabelClass('memorization')} onClick={() => switchTab('memorization')}>Memorization</button>
               <button className={tabLabelClass('themes')} onClick={() => switchTab('themes')}>Themes</button>
