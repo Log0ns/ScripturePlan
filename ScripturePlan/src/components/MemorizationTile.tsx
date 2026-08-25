@@ -28,7 +28,7 @@ export default React.memo(function MemorizationTile({ tile, timeOfDay, onTap, on
         flex items-center justify-center
         ${highlighted ? `ring-4 ${getRingStyle(timeOfDay)}` : 'shadow-md'}
         ${pressing ? 'tile-pressing' : 'tile-idle'}
-      `}}
+      `}
       onContextMenu={(e) => { e.preventDefault(); onLongPress(tile); }}
       {...handlers}
     >
