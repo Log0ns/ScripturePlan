@@ -84,7 +84,10 @@ export default function Planny() {
     return () => clearInterval(interval);
   }, []);
 
-  // --- Scripture icon logic ---
+  const switchTab = (t: Tab) => {
+    setTab(t);
+    setThemeTarget(null);
+  };
 
   const advanceChapter = (icon: ScriptureIcon): ScriptureIcon => {
     let { bookIndex, chapter, startBook, startChapter, endBook, endChapter } = icon;
@@ -115,7 +118,7 @@ export default function Planny() {
       setIcons(prev => prev.map(i => i.id === icon.id ? { ...advanced, readToday: true } : i));
       if (themeOnTap) {
         setThemeTarget({ bookIndex: icon.bookIndex, chapter: icon.chapter });
-        setTab('themes');
+        switchTab('themes');
       }
     }
   }, [openOnTap, themeOnTap, online]);
@@ -266,26 +269,29 @@ export default function Planny() {
   return (
     <div className={`min-h-screen bg-gradient-to-b ${getBackgroundGradient(timeOfDay)} flex flex-col transition-colors duration-1000`}>
 
+      {/* Sticky header */}
+      <div className={`sticky top-0 z-40 bg-gradient-to-b ${getBackgroundGradient(timeOfDay)} transition-colors duration-1000`}>
+        <div className="px-6 pt-10 pb-3 max-w-md mx-auto">
+        {(!online || (!user && !loading)) && (
+          <div className="flex justify-end items-center gap-2 mb-2">
+            {!user && !loading && (
+              <span className={`text-xs ${isNight ? 'text-slate-500' : 'text-slate-400'}`}>not signed in</span>
+            )}
+            {!online && <WifiOff className={`w-4 h-4 ${isNight ? 'text-slate-500' : 'text-slate-400'}`} />}
+          </div>
+        )}
+        <div className="flex gap-6 overflow-x-auto">
+          <button className={tabLabelClass('reading')} onClick={() => switchTab('reading')}>Reading</button>
+          <button className={tabLabelClass('memorization')} onClick={() => switchTab('memorization')}>Memorization</button>
+          <button className={tabLabelClass('themes')} onClick={() => switchTab('themes')}>Themes</button>
+          <button className={tabLabelClass('prayer')} onClick={() => switchTab('prayer')}>Prayer</button>
+        </div>
+        </div>
+      </div>
+
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarGutter: 'stable' }}>
-        <div className="px-6 pt-12 pb-8 max-w-md mx-auto relative">
-
-          {(!online || (!user && !loading)) && (
-            <div className="absolute top-4 right-6 flex items-center gap-2">
-              {!user && !loading && (
-                <span className={`text-xs ${isNight ? 'text-slate-500' : 'text-slate-400'}`}>not signed in</span>
-              )}
-              {!online && <WifiOff className={`w-4 h-4 ${isNight ? 'text-slate-500' : 'text-slate-400'}`} />}
-            </div>
-          )}
-
-          {/* Tab bar */}
-          <div className="flex gap-6 mb-6 overflow-x-auto">
-            <button className={tabLabelClass('reading')} onClick={() => { setTab('reading'); setThemeTarget(null); }}>Reading</button>
-            <button className={tabLabelClass('memorization')} onClick={() => { setTab('memorization'); setThemeTarget(null); }}>Memorization</button>
-            <button className={tabLabelClass('themes')} onClick={() => { setTab('themes'); setThemeTarget(null); }}>Themes</button>
-            <button className={tabLabelClass('prayer')} onClick={() => { setTab('prayer'); setThemeTarget(null); }}>Prayer</button>
-          </div>
+        <div className="px-6 pb-8 max-w-md mx-auto relative">
 
           {/* Tab: Reading */}
           {tab === 'reading' && (

@@ -24,8 +24,12 @@ const hasVTT = !!SpeechRecognition;
 
 export default function ThemesTab({ themes, timeOfDay, onChange, initialView }: Props) {
   const [view, setView] = useState<View>(initialView ?? { kind: 'list' });
-  const [otOpen, setOtOpen] = useState(false);
-  const [ntOpen, setNtOpen] = useState(false);
+  const [otOpen, setOtOpen] = useState(() => {
+    try { return localStorage.getItem('themes-ot-open') === 'true'; } catch { return false; }
+  });
+  const [ntOpen, setNtOpen] = useState(() => {
+    try { return localStorage.getItem('themes-nt-open') === 'true'; } catch { return false; }
+  });
   const [draft, setDraft] = useState('');
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef<any>(null);
@@ -132,7 +136,7 @@ export default function ThemesTab({ themes, timeOfDay, onChange, initialView }: 
                 ? 'bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-500'
                 : 'bg-white border border-slate-200 text-slate-800 placeholder-slate-400'}
             `}
-            rows={5}
+            rows={10}
             placeholder="What is the main theme of this chapter?"
             value={draft}
             onChange={e => handleDraftChange(e.target.value)}
@@ -234,7 +238,7 @@ export default function ThemesTab({ themes, timeOfDay, onChange, initialView }: 
       {/* OT section */}
       <div>
         <button
-          onClick={() => setOtOpen(v => !v)}
+          onClick={() => { const v = !otOpen; setOtOpen(v); try { localStorage.setItem('themes-ot-open', String(v)); } catch {} }}
           className={`flex items-center gap-2 mb-3 ${labelClass}`}
         >
           {otOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
@@ -246,7 +250,7 @@ export default function ThemesTab({ themes, timeOfDay, onChange, initialView }: 
       {/* NT section */}
       <div>
         <button
-          onClick={() => setNtOpen(v => !v)}
+          onClick={() => { const v = !ntOpen; setNtOpen(v); try { localStorage.setItem('themes-nt-open', String(v)); } catch {} }}
           className={`flex items-center gap-2 mb-3 ${labelClass}`}
         >
           {ntOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
