@@ -43,7 +43,6 @@ export default function Planny() {
   const [selectedMemoryTile, setSelectedMemoryTile] = useState<MemoryTile | null>(null);
   const [showGlobalSettings, setShowGlobalSettings] = useState(false);
   const [readingIcon, setReadingIcon] = useState<ScriptureIcon | null>(null);
-  const [scrollVersion, setScrollVersion] = useState(0);
   const [online, setOnline] = useState(navigator.onLine);
 
   const isNight = timeOfDay === 'night';
@@ -269,35 +268,37 @@ export default function Planny() {
   return (
     <div className={`min-h-screen bg-gradient-to-b ${getBackgroundGradient(timeOfDay)} flex flex-col transition-colors duration-1000`}>
 
-      {/* Sticky header */}
-      <div className={`sticky top-0 z-40 ${getHeaderStyle(timeOfDay)} shadow-sm transition-colors duration-1000`}>
-        <div className="px-6 pt-10 pb-3 max-w-md mx-auto">
-        {(!online || (!user && !loading)) && (
-          <div className="flex justify-end items-center gap-2 mb-2">
-            {!user && !loading && (
-              <span className={`text-xs ${isNight ? 'text-slate-500' : 'text-slate-400'}`}>not signed in</span>
-            )}
-            {!online && <WifiOff className={`w-4 h-4 ${isNight ? 'text-slate-500' : 'text-slate-400'}`} />}
-          </div>
-        )}
-        <div className="flex gap-6 overflow-x-auto">
-          <button className={tabLabelClass('reading')} onClick={() => switchTab('reading')}>Reading</button>
-          <button className={tabLabelClass('memorization')} onClick={() => switchTab('memorization')}>Memorization</button>
-          <button className={tabLabelClass('themes')} onClick={() => switchTab('themes')}>Themes</button>
-          <button className={tabLabelClass('prayer')} onClick={() => switchTab('prayer')}>Prayer</button>
-        </div>
-        </div>
-      </div>
-
-      {/* Scrollable content */}
+      {/* Single scroll container */}
       <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarGutter: 'stable' }}>
-        <div className="px-6 pb-8 max-w-md mx-auto relative">
+
+        {/* Sticky header */}
+        <div className={`sticky top-0 z-40 ${getHeaderStyle(timeOfDay)} shadow-sm transition-colors duration-1000`}>
+          <div className="px-6 pt-2 pb-3 max-w-md mx-auto">
+            {(!online || (!user && !loading)) && (
+              <div className="flex justify-end items-center gap-2 mb-1">
+                {!user && !loading && (
+                  <span className={`text-xs ${isNight ? 'text-slate-500' : 'text-slate-400'}`}>not signed in</span>
+                )}
+                {!online && <WifiOff className={`w-4 h-4 ${isNight ? 'text-slate-500' : 'text-slate-400'}`} />}
+              </div>
+            )}
+            <div className="flex gap-6 overflow-x-auto">
+              <button className={tabLabelClass('reading')} onClick={() => switchTab('reading')}>Reading</button>
+              <button className={tabLabelClass('memorization')} onClick={() => switchTab('memorization')}>Memorization</button>
+              <button className={tabLabelClass('themes')} onClick={() => switchTab('themes')}>Themes</button>
+              <button className={tabLabelClass('prayer')} onClick={() => switchTab('prayer')}>Prayer</button>
+            </div>
+          </div>
+        </div>
+
+        {/* Tab content */}
+        <div className="px-6 pt-6 pb-8 max-w-md mx-auto">
 
           {/* Tab: Reading */}
           {tab === 'reading' && (
             <div className="grid grid-cols-2 gap-4">
               {icons.map(icon => (
-                <ReadingTile key={icon.id} icon={icon} timeOfDay={timeOfDay} openOnTap={openOnTap} scrollVersion={scrollVersion} onTap={handleTap} onLongPress={handleLongPress} />
+                <ReadingTile key={icon.id} icon={icon} timeOfDay={timeOfDay} openOnTap={openOnTap} onTap={handleTap} onLongPress={handleLongPress} />
               ))}
               {icons.length < 10 && (
                 <button onClick={addIcon} className={addButtonStyle}>
@@ -398,12 +399,8 @@ export default function Planny() {
             const advanced = advanceChapter(readingIcon);
             setIcons(prev => prev.map(i => i.id === readingIcon.id ? { ...advanced, readToday: true } : i));
             setReadingIcon(null);
-            setScrollVersion(v => v + 1);
           }}
-          onClose={() => {
-            setReadingIcon(null);
-            setScrollVersion(v => v + 1);
-          }}
+          onClose={() => setReadingIcon(null)}
         />
       )}
 

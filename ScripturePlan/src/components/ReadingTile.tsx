@@ -8,12 +8,11 @@ type Props = {
   icon: ScriptureIcon;
   timeOfDay: TimeOfDay;
   openOnTap: boolean;
-  scrollVersion: number;
   onTap: (icon: ScriptureIcon) => void;
   onLongPress: (icon: ScriptureIcon) => void;
 };
 
-export default React.memo(function ReadingTile({ icon, timeOfDay, openOnTap, scrollVersion, onTap, onLongPress }: Props) {
+export default React.memo(function ReadingTile({ icon, timeOfDay, openOnTap, onTap, onLongPress }: Props) {
   const { handlers, pressing } = useLongPress(
     useCallback(() => onTap(icon), [icon, onTap]),
     useCallback(() => onLongPress(icon), [icon, onLongPress])
