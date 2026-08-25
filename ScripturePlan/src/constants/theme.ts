@@ -55,6 +55,16 @@ export const getFilledStyle = (timeOfDay: TimeOfDay): { bg: string; text: string
   return styles[timeOfDay];
 };
 
+export const getHeaderStyle = (timeOfDay: TimeOfDay): string => {
+  const styles: Record<TimeOfDay, string> = {
+    morning: 'bg-rose-200',
+    afternoon: 'bg-cyan-200',
+    evening: 'bg-orange-200',
+    night: 'bg-slate-900',
+  };
+  return styles[timeOfDay];
+};
+
 export const getIconColor = (timeOfDay: TimeOfDay): string => {
   const colors: Record<TimeOfDay, string> = {
     morning: 'bg-amber-50',

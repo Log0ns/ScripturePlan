@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Plus, WifiOff, BookOpen } from 'lucide-react';
 import { ScriptureIcon, CustomTile, MemoryTile, Themes, CompletedChunks } from './types';
-import { BIBLE_BOOKS, DEFAULT_ICONS, READING_PLANS, MEMORY_CHUNKS, getTimeOfDay, getBackgroundGradient, updateMetaThemeColor } from './constants';
+import { BIBLE_BOOKS, DEFAULT_ICONS, READING_PLANS, MEMORY_CHUNKS, getTimeOfDay, getBackgroundGradient, getHeaderStyle, updateMetaThemeColor } from './constants';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useAuth } from './hooks/useAuth';
 import { useFirebaseSync } from './hooks/useFirebaseSync';
@@ -270,7 +270,7 @@ export default function Planny() {
     <div className={`min-h-screen bg-gradient-to-b ${getBackgroundGradient(timeOfDay)} flex flex-col transition-colors duration-1000`}>
 
       {/* Sticky header */}
-      <div className={`sticky top-0 z-40 bg-gradient-to-b ${getBackgroundGradient(timeOfDay)} transition-colors duration-1000`}>
+      <div className={`sticky top-0 z-40 ${getHeaderStyle(timeOfDay)} shadow-sm transition-colors duration-1000`}>
         <div className="px-6 pt-10 pb-3 max-w-md mx-auto">
         {(!online || (!user && !loading)) && (
           <div className="flex justify-end items-center gap-2 mb-2">
