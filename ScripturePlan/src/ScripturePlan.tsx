@@ -266,14 +266,14 @@ export default function Planny() {
     }`;
 
   return (
-    <div className={`min-h-screen bg-gradient-to-b ${getBackgroundGradient(timeOfDay)} flex flex-col transition-colors duration-1000`}>
+    <div className={`h-screen bg-gradient-to-b ${getBackgroundGradient(timeOfDay)} flex flex-col transition-colors duration-1000`}>
 
       {/* Single scroll container */}
       <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarGutter: 'stable' }}>
 
         {/* Sticky header */}
         <div className={`sticky top-0 z-40 ${getHeaderStyle(timeOfDay)} shadow-sm transition-colors duration-1000`}>
-          <div className="px-6 pt-2 pb-3 max-w-md mx-auto">
+          <div className="px-6 pt-4 pb-3 max-w-md mx-auto">
             {(!online || (!user && !loading)) && (
               <div className="flex justify-end items-center gap-2 mb-1">
                 {!user && !loading && (
