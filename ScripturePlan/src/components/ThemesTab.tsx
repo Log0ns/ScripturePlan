@@ -38,6 +38,9 @@ export default function ThemesTab({ themes, timeOfDay, onChange, initialView }: 
   useEffect(() => {
     if (initialView) setView(initialView);
   }, [initialView]);
+
+  // Load draft when entering editor
+  useEffect(() => {
     if (view.kind === 'editor') {
       setDraft(themes[view.bookIndex]?.[view.chapter] ?? '');
     }
