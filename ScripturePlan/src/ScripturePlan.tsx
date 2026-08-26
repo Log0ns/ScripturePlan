@@ -83,9 +83,9 @@ export default function Planny() {
     return () => clearInterval(interval);
   }, []);
 
-  const switchTab = (t: Tab) => {
+  const switchTab = (t: Tab, preserveThemeTarget = false) => {
     setTab(t);
-    setThemeTarget(null);
+    if (!preserveThemeTarget) setThemeTarget(null);
   };
 
   const advanceChapter = (icon: ScriptureIcon): ScriptureIcon => {
@@ -117,7 +117,7 @@ export default function Planny() {
       setIcons(prev => prev.map(i => i.id === icon.id ? { ...advanced, readToday: true } : i));
       if (themeOnTap) {
         setThemeTarget({ bookIndex: icon.bookIndex, chapter: icon.chapter });
-        switchTab('themes');
+        switchTab('themes', true);
       }
     }
   }, [openOnTap, themeOnTap, online]);
