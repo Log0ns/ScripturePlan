@@ -74,12 +74,13 @@ export default React.memo(function ReadingTile({ icon, timeOfDay, openOnTap, onT
 
   return (
     <div
-      className={`aspect-square rounded-2xl relative
+      className={`aspect-square relative
         ${getTileStyle(timeOfDay)}
         flex items-center justify-center
         shadow-md
         ${pressing ? 'tile-pressing' : 'tile-idle'}
       `}
+      style={{ borderRadius: '16%' }}
       onContextMenu={(e) => { e.preventDefault(); onLongPress(icon); }}
       {...handlers}
     >
