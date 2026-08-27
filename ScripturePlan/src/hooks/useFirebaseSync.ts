@@ -2,10 +2,11 @@ import { useEffect, useRef } from 'react';
 import { User } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { ScriptureIcon, CustomTile, MemoryTile, Themes, CompletedChunks } from '../types';
+import { IconGroup, CustomTile, MemoryTile, Themes, CompletedChunks } from '../types';
 
 type SyncData = {
-  icons: ScriptureIcon[];
+  iconGroups: IconGroup[];
+  activeGroupId: number;
   customTiles: CustomTile[];
   memoryTiles: MemoryTile[];
   themes: Themes;
@@ -15,7 +16,8 @@ type SyncData = {
 };
 
 type SyncCallbacks = {
-  setIcons: (v: ScriptureIcon[]) => void;
+  setIconGroups: (v: IconGroup[]) => void;
+  setActiveGroupId: (v: number) => void;
   setCustomTiles: (v: CustomTile[]) => void;
   setMemoryTiles: (v: MemoryTile[]) => void;
   setThemes: (v: Themes) => void;
@@ -38,6 +40,7 @@ export function useFirebaseSync(
   const lastPulledAt = useRef(
     (() => { try { return Number(localStorage.getItem('planny-lastSync')) || 0; } catch { return 0; } })()
   );
+
   const parseThemes = (raw: any): Themes => {
     if (!raw) return {};
     const result: Themes = {};
@@ -57,7 +60,6 @@ export function useFirebaseSync(
 
   const uid = user?.uid ?? null;
 
-  // Pull on every mount/focus when signed in
   useEffect(() => {
     if (!uid) return;
 
@@ -72,9 +74,14 @@ export function useFirebaseSync(
             persistSyncTime(remoteTime);
             const today = new Date().toDateString();
             const isNewDay = remote.lastResetDate && remote.lastResetDate !== today;
+            const rawGroups = remote.iconGroups;
+            const iconGroups: IconGroup[] = rawGroups && rawGroups.length > 0
+              ? rawGroups
+              : [{ id: 1, name: 'Group 1', icons: (remote as any).icons ?? [] }];
             if (isNewDay) {
-              const readCount = remote.icons.filter(i => i.readToday).length;
-              callbacks.setIcons(remote.icons.map(i => ({ ...i, readToday: false })));
+              const readCount = iconGroups.flatMap(g => g.icons).filter(i => i.readToday).length;
+              callbacks.setIconGroups(iconGroups.map(g => ({ ...g, icons: g.icons.map(i => ({ ...i, readToday: false, chaptersReadToday: 0 })) })));
+              callbacks.setActiveGroupId(remote.activeGroupId ?? iconGroups[0]?.id ?? 1);
               callbacks.setCustomTiles(remote.customTiles.map(t => ({ ...t, activeToday: false })));
               callbacks.setMemoryTiles(remote.memoryTiles?.map(t => ({ ...t, readToday: false })) ?? []);
               callbacks.setThemes(parseThemes(remote.themes));
@@ -82,7 +89,8 @@ export function useFirebaseSync(
               callbacks.setDaysCompleted(remote.daysCompleted + readCount);
               callbacks.setLastResetDate(today);
             } else {
-              callbacks.setIcons(remote.icons);
+              callbacks.setIconGroups(iconGroups);
+              callbacks.setActiveGroupId(remote.activeGroupId ?? iconGroups[0]?.id ?? 1);
               callbacks.setCustomTiles(remote.customTiles);
               callbacks.setMemoryTiles(remote.memoryTiles ?? []);
               callbacks.setThemes(parseThemes(remote.themes));
@@ -91,13 +99,12 @@ export function useFirebaseSync(
               callbacks.setLastResetDate(remote.lastResetDate);
             }
           } else {
-            // Pull skipped but still check for daily reset locally
             const today = new Date().toDateString();
             const localResetDate = dataRef.current.lastResetDate;
             if (localResetDate && localResetDate !== today) {
-              const readCount = dataRef.current.icons.filter(i => i.readToday).length;
+              const readCount = dataRef.current.iconGroups.flatMap(g => g.icons).filter(i => i.readToday).length;
               if (readCount > 0) callbacks.setDaysCompleted(dataRef.current.daysCompleted + readCount);
-              callbacks.setIcons(dataRef.current.icons.map(i => ({ ...i, readToday: false })));
+              callbacks.setIconGroups(dataRef.current.iconGroups.map(g => ({ ...g, icons: g.icons.map(i => ({ ...i, readToday: false, chaptersReadToday: 0 })) })));
               callbacks.setCustomTiles(dataRef.current.customTiles.map(t => ({ ...t, activeToday: false })));
               callbacks.setMemoryTiles(dataRef.current.memoryTiles.map(t => ({ ...t, readToday: false })));
               callbacks.setLastResetDate(today);
@@ -112,16 +119,12 @@ export function useFirebaseSync(
     };
 
     pull();
-
-    const onFocus = () => pull();
-    window.addEventListener('focus', onFocus);
-    return () => window.removeEventListener('focus', onFocus);
+    window.addEventListener('focus', pull);
+    return () => window.removeEventListener('focus', pull);
   }, [uid]);
 
-  // Push on changes
   useEffect(() => {
     if (!uid || !readyToPush.current) return;
-
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       const now = Date.now();
@@ -130,11 +133,9 @@ export function useFirebaseSync(
       setDoc(ref, { ...dataRef.current, lastModified: now }, { merge: true }).catch(console.error);
       debounceRef.current = null;
     }, 1000);
-
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [uid, data.icons, data.customTiles, data.memoryTiles, data.themes, data.completedChunks, data.daysCompleted, data.lastResetDate]);
+  }, [uid, data.iconGroups, data.activeGroupId, data.customTiles, data.memoryTiles, data.themes, data.completedChunks, data.daysCompleted, data.lastResetDate]);
 
-  // Flush pending push on page unload
   useEffect(() => {
     const flush = () => {
       if (!uid || !debounceRef.current) return;

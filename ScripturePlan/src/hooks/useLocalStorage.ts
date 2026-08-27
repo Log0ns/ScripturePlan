@@ -2,14 +2,14 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 
 const DEBOUNCE_MS = 300;
 
-export function useLocalStorage<T>(key: string, initialValue: T, transform?: (v: T) => T): [T, (value: T | ((prev: T) => T)) => void] {
+export function useLocalStorage<T>(key: string, initialValue: T | (() => T), transform?: (v: T) => T): [T, (value: T | ((prev: T) => T)) => void] {
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
       const item = localStorage.getItem(key);
-      const parsed = item ? JSON.parse(item) : initialValue;
+      const parsed = item ? JSON.parse(item) : (typeof initialValue === 'function' ? (initialValue as () => T)() : initialValue);
       return transform ? transform(parsed) : parsed;
     } catch {
-      return initialValue;
+      return typeof initialValue === 'function' ? (initialValue as () => T)() : initialValue;
     }
   });
 

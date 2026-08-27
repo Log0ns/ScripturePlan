@@ -1,16 +1,28 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Plus, WifiOff, BookOpen } from 'lucide-react';
-import { ScriptureIcon, CustomTile, MemoryTile, Themes, CompletedChunks } from './types';
+import { ScriptureIcon, IconGroup, CustomTile, MemoryTile, Themes, CompletedChunks } from './types';
 import { BIBLE_BOOKS, DEFAULT_ICONS, READING_PLANS, MEMORY_CHUNKS, getTimeOfDay, getBackgroundGradient, getHeaderStyle, updateMetaThemeColor } from './constants';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useAuth } from './hooks/useAuth';
 import { useFirebaseSync } from './hooks/useFirebaseSync';
-import { ReadingTile, PrayerTile, MemorizationTile, SettingsModal, GlobalSettingsModal, CustomTileSettings, ChapterReader, MemoryTileModal, ThemesTab } from './components';
+import { ReadingTile, PrayerTile, MemorizationTile, SettingsModal, GlobalSettingsModal, CustomTileSettings, ChapterReader, MemoryTileModal, ThemesTab, GroupSwitcher } from './components';
 
 type Tab = 'reading' | 'memorization' | 'themes' | 'prayer';
 
 export default function Planny() {
-  const [icons, setIcons] = useLocalStorage<ScriptureIcon[]>('planny-icons', DEFAULT_ICONS);
+  const [iconGroups, setIconGroups] = useLocalStorage<IconGroup[]>('planny-icon-groups', () => {
+    // Migrate legacy planny-icons to first group
+    try {
+      const legacy = localStorage.getItem('planny-icons');
+      if (legacy) {
+        const icons = JSON.parse(legacy) as ScriptureIcon[];
+        localStorage.removeItem('planny-icons');
+        return [{ id: 1, name: 'Group 1', icons }];
+      }
+    } catch {}
+    return [{ id: 1, name: 'Group 1', icons: DEFAULT_ICONS }];
+  });
+  const [activeGroupId, setActiveGroupId] = useLocalStorage<number>('planny-active-group', 1);
   const [customTiles, setCustomTiles] = useLocalStorage<CustomTile[]>('custom-tiles', []);
   const [memoryTiles, setMemoryTiles] = useLocalStorage<MemoryTile[]>('memory-tiles', []);
   const [themes, setThemes] = useLocalStorage<Themes>('planny-themes', {}, v => {
@@ -32,8 +44,18 @@ export default function Planny() {
 
   const { user, loading, signIn, logOut } = useAuth();
 
-  const syncData = useMemo(() => ({ icons, customTiles, memoryTiles, themes, completedChunks, daysCompleted, lastResetDate }), [icons, customTiles, memoryTiles, themes, completedChunks, daysCompleted, lastResetDate]);
-  useFirebaseSync(user, syncData, { setIcons, setCustomTiles, setMemoryTiles, setThemes, setCompletedChunks, setDaysCompleted, setLastResetDate });
+  const syncData = useMemo(() => ({ iconGroups, activeGroupId, customTiles, memoryTiles, themes, completedChunks, daysCompleted, lastResetDate }), [iconGroups, activeGroupId, customTiles, memoryTiles, themes, completedChunks, daysCompleted, lastResetDate]);
+  useFirebaseSync(user, syncData, { setIconGroups, setActiveGroupId, setCustomTiles, setMemoryTiles, setThemes, setCompletedChunks, setDaysCompleted, setLastResetDate });
+
+  const activeGroup = iconGroups.find(g => g.id === activeGroupId) ?? iconGroups[0];
+  const icons = activeGroup?.icons ?? [];
+  const setIcons = (updater: ScriptureIcon[] | ((prev: ScriptureIcon[]) => ScriptureIcon[])) => {
+    setIconGroups(prev => prev.map(g =>
+      g.id === activeGroup.id
+        ? { ...g, icons: typeof updater === 'function' ? updater(g.icons) : updater }
+        : g
+    ));
+  };
 
   const [tab, setTab] = useState<Tab>('reading');
   const [themeTarget, setThemeTarget] = useState<{ bookIndex: number; chapter: number } | null>(null);
@@ -60,10 +82,10 @@ export default function Planny() {
     if (user) return;
     const today = new Date().toDateString();
     if (lastResetDate && lastResetDate !== today) {
-      setIcons(prev => {
-        const readCount = prev.filter(i => i.readToday).length;
+      setIconGroups(prev => {
+        const readCount = prev.flatMap(g => g.icons).filter(i => i.readToday).length;
         if (readCount > 0) setDaysCompleted(d => d + readCount);
-        return prev.map(i => ({ ...i, readToday: false }));
+        return prev.map(g => ({ ...g, icons: g.icons.map(i => ({ ...i, readToday: false, chaptersReadToday: 0 })) }));
       });
       setCustomTiles(prev => prev.map(t => ({ ...t, activeToday: false })));
       setMemoryTiles(prev => prev.map(t => ({ ...t, readToday: false })));
@@ -113,9 +135,16 @@ export default function Planny() {
     if (openOnTap) {
       setReadingIcon(icon);
     } else {
-      const advanced = advanceChapter(icon);
-      setIcons(prev => prev.map(i => i.id === icon.id ? { ...advanced, readToday: true } : i));
-      if (themeOnTap) {
+      const cpd = icon.chaptersPerDay ?? 1;
+      const crt = (icon.chaptersReadToday ?? 0) + 1;
+      const done = crt >= cpd;
+      const advanced = done ? advanceChapter(icon) : icon;
+      setIcons(prev => prev.map(i =>
+        i.id === icon.id
+          ? { ...advanced, chaptersReadToday: done ? 0 : crt, readToday: done }
+          : i
+      ));
+      if (done && themeOnTap) {
         setThemeTarget({ bookIndex: icon.bookIndex, chapter: icon.chapter });
         switchTab('themes', true);
       }
@@ -149,6 +178,7 @@ export default function Planny() {
       id: Math.max(0, ...icons.map(i => i.id)) + 1,
       bookIndex: 0, chapter: 1, startBook: 0, startChapter: 1,
       endBook: null, endChapter: null, readToday: false,
+      chaptersPerDay: 1, chaptersReadToday: 0,
     }]);
   };
 
@@ -246,6 +276,36 @@ export default function Planny() {
     }]);
   };
 
+  // --- Group logic ---
+
+  const addGroup = () => {
+    if (iconGroups.length >= 3) return;
+    const newId = Math.max(0, ...iconGroups.map(g => g.id)) + 1;
+    setIconGroups(prev => [...prev, { id: newId, name: `Group ${newId}`, icons: DEFAULT_ICONS }]);
+    setActiveGroupId(newId);
+  };
+
+  const deleteGroup = (id: number) => {
+    if (iconGroups.length <= 1) return;
+    setIconGroups(prev => prev.filter(g => g.id !== id));
+    if (activeGroupId === id) setActiveGroupId(iconGroups.find(g => g.id !== id)!.id);
+  };
+
+  const renameGroup = (id: number, name: string) => {
+    setIconGroups(prev => prev.map(g => g.id === id ? { ...g, name } : g));
+  };
+
+  const memoryPoints = completedChunks.length;
+
+  const themePoints = useMemo(() => BIBLE_BOOKS.reduce((count, book, bookIndex) => {
+    const bookThemes = themes[bookIndex];
+    if (!bookThemes) return count;
+    for (let ch = 1; ch <= book.chapters; ch++) {
+      if (!bookThemes[ch]?.trim()) return count;
+    }
+    return count + 1;
+  }, 0), [themes]);
+
   // --- Plan / reset logic ---
 
   const applyPlan = (plan: string) => {
@@ -296,15 +356,26 @@ export default function Planny() {
 
           {/* Tab: Reading */}
           {tab === 'reading' && (
-            <div className="grid grid-cols-2 gap-4">
-              {icons.map(icon => (
-                <ReadingTile key={icon.id} icon={icon} timeOfDay={timeOfDay} openOnTap={openOnTap} onTap={handleTap} onLongPress={handleLongPress} />
-              ))}
-              {icons.length < 10 && (
-                <button onClick={addIcon} className={addButtonStyle}>
-                  <Plus className={`w-8 h-8 ${isNight ? 'text-slate-500' : 'text-slate-400'}`} />
-                </button>
-              )}
+            <div>
+              <GroupSwitcher
+                groups={iconGroups}
+                activeGroupId={activeGroupId}
+                timeOfDay={timeOfDay}
+                onSwitch={setActiveGroupId}
+                onAdd={addGroup}
+                onDelete={deleteGroup}
+                onRename={renameGroup}
+              />
+              <div className="grid grid-cols-2 gap-4">
+                {icons.map(icon => (
+                  <ReadingTile key={icon.id} icon={icon} timeOfDay={timeOfDay} openOnTap={openOnTap} onTap={handleTap} onLongPress={handleLongPress} />
+                ))}
+                {icons.length < 10 && (
+                  <button onClick={addIcon} className={addButtonStyle}>
+                    <Plus className={`w-8 h-8 ${isNight ? 'text-slate-500' : 'text-slate-400'}`} />
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -351,11 +422,19 @@ export default function Planny() {
       {/* Bottom Toolbar */}
       <div className={`fixed bottom-0 left-0 right-0 z-50 ${isNight ? 'bg-slate-900/90 border-slate-700' : 'bg-white/90 border-slate-200'} border-t`}>
         <div className="max-w-md mx-auto flex items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-2">
-            <BookOpen className={`w-4 h-4 ${isNight ? 'text-slate-400' : 'text-slate-500'}`} />
-            <span className={`text-sm font-semibold tabular-nums ${isNight ? 'text-slate-300' : 'text-slate-700'}`}>
-              {daysCompleted}
-            </span>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              <BookOpen className={`w-4 h-4 ${isNight ? 'text-slate-400' : 'text-slate-500'}`} />
+              <span className={`text-sm font-semibold tabular-nums ${isNight ? 'text-slate-300' : 'text-slate-700'}`}>{daysCompleted}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-base">🧠</span>
+              <span className={`text-sm font-semibold tabular-nums ${isNight ? 'text-slate-300' : 'text-slate-700'}`}>{memoryPoints}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-base">📖</span>
+              <span className={`text-sm font-semibold tabular-nums ${isNight ? 'text-slate-300' : 'text-slate-700'}`}>{themePoints}</span>
+            </div>
           </div>
 
           <button
@@ -396,8 +475,15 @@ export default function Planny() {
           bookName={BIBLE_BOOKS[readingIcon.bookIndex].name}
           chapter={readingIcon.chapter}
           onComplete={() => {
-            const advanced = advanceChapter(readingIcon);
-            setIcons(prev => prev.map(i => i.id === readingIcon.id ? { ...advanced, readToday: true } : i));
+            const cpd = readingIcon.chaptersPerDay ?? 1;
+            const crt = (readingIcon.chaptersReadToday ?? 0) + 1;
+            const done = crt >= cpd;
+            const advanced = done ? advanceChapter(readingIcon) : readingIcon;
+            setIcons(prev => prev.map(i =>
+              i.id === readingIcon.id
+                ? { ...advanced, chaptersReadToday: done ? 0 : crt, readToday: done }
+                : i
+            ));
             setReadingIcon(null);
           }}
           onClose={() => setReadingIcon(null)}

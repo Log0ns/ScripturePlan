@@ -32,11 +32,23 @@ export default function SettingsModal({ icon, canDelete, onUpdate, onDelete, onC
             id="readToday"
             className="mr-2 h-4 w-4 accent-amber-500"
             checked={icon.readToday || false}
-            onChange={(e) => onUpdate({ readToday: e.target.checked })}
+            onChange={(e) => onUpdate({ readToday: e.target.checked, chaptersReadToday: 0 })}
           />
           <label htmlFor="readToday" className="text-slate-300 text-sm">
             Highlighted
           </label>
+        </div>
+
+        <div className="mb-5">
+          <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2 block">Chapters per day</label>
+          <input
+            type="number"
+            min={1}
+            max={99}
+            value={icon.chaptersPerDay ?? 1}
+            onChange={(e) => onUpdate({ chaptersPerDay: Math.max(1, parseInt(e.target.value) || 1), chaptersReadToday: 0 })}
+            className="w-24 p-3 border border-slate-600 rounded-xl bg-slate-700 text-slate-100 focus:outline-none focus:border-amber-500"
+          />
         </div>
 
         {/* Current Position */}

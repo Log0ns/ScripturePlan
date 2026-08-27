@@ -7,3 +7,4 @@ export { default as CustomTileSettings } from './CustomTileSettings';
 export { default as ChapterReader } from './ChapterReader';
 export { default as MemoryTileModal } from './MemoryTileModal';
 export { default as ThemesTab } from './ThemesTab';
+export { default as GroupSwitcher } from './GroupSwitcher';

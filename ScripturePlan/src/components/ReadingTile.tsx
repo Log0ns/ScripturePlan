@@ -12,6 +12,44 @@ type Props = {
   onLongPress: (icon: ScriptureIcon) => void;
 };
 
+const RING_COLORS: Record<string, string> = {
+  morning: '#fbbf24',
+  afternoon: '#22d3ee',
+  evening: '#fb7185',
+  night: '#fbbf24',
+};
+
+function ProgressRing({ progress, timeOfDay }: { progress: number; timeOfDay: TimeOfDay }) {
+  // progress: 0–1
+  const size = 120;
+  const stroke = 4;
+  const r = (size - stroke) / 2;
+  const circ = 2 * Math.PI * r;
+  const dash = circ * progress;
+  const color = RING_COLORS[timeOfDay];
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      className="absolute inset-0 w-full h-full"
+      style={{ transform: 'rotate(-90deg)' }}
+    >
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke={color}
+        strokeWidth={stroke}
+        strokeDasharray={`${dash} ${circ - dash}`}
+        strokeLinecap="round"
+        opacity={0.85}
+      />
+    </svg>
+  );
+}
+
 export default React.memo(function ReadingTile({ icon, timeOfDay, openOnTap, onTap, onLongPress }: Props) {
   const { handlers, pressing } = useLongPress(
     useCallback(() => onTap(icon), [icon, onTap]),
@@ -23,17 +61,26 @@ export default React.memo(function ReadingTile({ icon, timeOfDay, openOnTap, onT
   const nameSize = bookName.length > 12 ? 'text-xs' : 'text-sm';
   const hasProgress = openOnTap && !!sessionStorage.getItem(`planny-scroll-${icon.id}`);
 
+  const cpd = icon.chaptersPerDay ?? 1;
+  const crt = icon.chaptersReadToday ?? 0;
+  const fullyDone = icon.readToday;
+  const progress = fullyDone ? 1 : cpd > 1 ? Math.min(crt / cpd, 1) : 0;
+  const showRing = fullyDone || (cpd > 1 && crt > 0);
+
   return (
     <div
       className={`aspect-square rounded-2xl relative
         ${getTileStyle(timeOfDay)}
         flex items-center justify-center
-        ${icon.readToday ? `ring-4 ${getRingStyle(timeOfDay)}` : 'shadow-md'}
+        ${fullyDone && cpd === 1 ? `ring-4 ${getRingStyle(timeOfDay)}` : 'shadow-md'}
         ${pressing ? 'tile-pressing' : 'tile-idle'}
       `}
       onContextMenu={(e) => { e.preventDefault(); onLongPress(icon); }}
       {...handlers}
     >
+      {showRing && (
+        <ProgressRing progress={progress} timeOfDay={timeOfDay} />
+      )}
       {openOnTap && hasProgress && (
         <div className="absolute top-2 right-2">
           <BookOpen className={`w-3.5 h-3.5 ${colors.muted}`} />

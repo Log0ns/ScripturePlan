@@ -15,6 +15,14 @@ export type ScriptureIcon = {
   endBook: number | null;
   endChapter: number | null;
   readToday: boolean;
+  chaptersPerDay: number;
+  chaptersReadToday: number;
+};
+
+export type IconGroup = {
+  id: number;
+  name: string;
+  icons: ScriptureIcon[];
 };
 
 export type CustomTile = {
