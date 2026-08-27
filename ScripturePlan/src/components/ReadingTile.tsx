@@ -19,6 +19,41 @@ const RING_COLORS: Record<string, string> = {
   night: '#fbbf24',
 };
 
+function ProgressBorder({ progress, timeOfDay }: { progress: number; timeOfDay: TimeOfDay }) {
+  const size = 100;
+  const stroke = 3;
+  const r = 16; // matches rounded-2xl (16px at 100-unit scale)
+  const half = stroke / 2;
+  const w = size - stroke;
+  const h = size - stroke;
+  // Perimeter of a rounded rect: 4 straight segments + 4 quarter-circle arcs
+  const perimeter = 2 * (w - 2 * r) + 2 * (h - 2 * r) + 2 * Math.PI * r;
+  const dash = perimeter * progress;
+
+  return (
+    <svg
+      viewBox={`0 0 ${size} ${size}`}
+      className="absolute inset-0 w-full h-full pointer-events-none"
+      style={{ transform: 'rotate(-90deg)' }}
+    >
+      <rect
+        x={half}
+        y={half}
+        width={w}
+        height={h}
+        rx={r}
+        ry={r}
+        fill="none"
+        stroke={RING_COLORS[timeOfDay]}
+        strokeWidth={stroke}
+        strokeDasharray={`${dash} ${perimeter - dash}`}
+        strokeLinecap="round"
+        opacity={0.9}
+      />
+    </svg>
+  );
+}
+
 export default React.memo(function ReadingTile({ icon, timeOfDay, openOnTap, onTap, onLongPress }: Props) {
   const { handlers, pressing } = useLongPress(
     useCallback(() => onTap(icon), [icon, onTap]),
@@ -35,7 +70,6 @@ export default React.memo(function ReadingTile({ icon, timeOfDay, openOnTap, onT
   const fullyDone = icon.readToday;
   const progress = fullyDone ? 1 : Math.min(crt / cpd, 1);
   const showRing = fullyDone || crt > 0;
-  const ringColor = RING_COLORS[timeOfDay];
 
   return (
     <div
@@ -48,16 +82,7 @@ export default React.memo(function ReadingTile({ icon, timeOfDay, openOnTap, onT
       onContextMenu={(e) => { e.preventDefault(); onLongPress(icon); }}
       {...handlers}
     >
-      {showRing && (
-        <div
-          className="absolute inset-0 rounded-2xl pointer-events-none"
-          style={{
-            background: `conic-gradient(${ringColor}cc ${progress * 360}deg, transparent ${progress * 360}deg)`,
-            mask: 'radial-gradient(farthest-side, transparent calc(100% - 5px), black calc(100% - 5px))',
-            WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 5px), black calc(100% - 5px))',
-          }}
-        />
-      )}
+      {showRing && <ProgressBorder progress={progress} timeOfDay={timeOfDay} />}
       {openOnTap && hasProgress && (
         <div className="absolute top-2 right-2">
           <BookOpen className={`w-3.5 h-3.5 ${colors.muted}`} />

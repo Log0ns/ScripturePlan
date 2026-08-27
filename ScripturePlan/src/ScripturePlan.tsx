@@ -50,8 +50,9 @@ export default function Planny() {
   const activeGroup = iconGroups.find(g => g.id === activeGroupId) ?? iconGroups[0];
   const icons = activeGroup?.icons ?? [];
   const setIcons = (updater: ScriptureIcon[] | ((prev: ScriptureIcon[]) => ScriptureIcon[])) => {
+    const groupId = activeGroupIdRef.current;
     setIconGroups(prev => prev.map(g =>
-      g.id === activeGroup.id
+      g.id === groupId
         ? { ...g, icons: typeof updater === 'function' ? updater(g.icons) : updater }
         : g
     ));
@@ -130,6 +131,9 @@ export default function Planny() {
     return { ...icon, bookIndex, chapter };
   };
 
+  const activeGroupIdRef = useRef(activeGroupId);
+  activeGroupIdRef.current = activeGroupId;
+
   const handleTap = useCallback((icon: ScriptureIcon) => {
     if (!online) return;
     if (openOnTap) {
@@ -139,8 +143,9 @@ export default function Planny() {
       const crt = (icon.chaptersReadToday ?? 0) + 1;
       const done = crt >= cpd;
       const advanced = advanceChapter(icon);
+      const groupId = activeGroupIdRef.current;
       setIconGroups(prev => prev.map(g =>
-        g.id === activeGroup.id
+        g.id === groupId
           ? { ...g, icons: g.icons.map(i =>
               i.id === icon.id
                 ? { ...advanced, chaptersReadToday: done ? 0 : crt, readToday: done }
@@ -153,7 +158,7 @@ export default function Planny() {
         switchTab('themes', true);
       }
     }
-  }, [openOnTap, themeOnTap, online, activeGroup.id]);
+  }, [openOnTap, themeOnTap, online]);
 
   const handleLongPress = useCallback((icon: ScriptureIcon) => {
     if (!online) return;
