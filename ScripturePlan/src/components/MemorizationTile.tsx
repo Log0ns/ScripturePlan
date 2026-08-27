@@ -1,7 +1,8 @@
 import React, { useCallback } from 'react';
 import { MemoryTile, TimeOfDay } from '../types';
-import { MEMORY_CHUNKS, getTileStyle, getTileTextColor, getRingStyle } from '../constants';
+import { MEMORY_CHUNKS, getTileTextColor } from '../constants';
 import { useLongPress } from '../hooks/useLongPress';
+import TileShell from './TileShell';
 
 type Props = {
   tile: MemoryTile;
@@ -18,19 +19,15 @@ export default React.memo(function MemorizationTile({ tile, timeOfDay, onTap, on
 
   const colors = getTileTextColor(timeOfDay);
   const chunk = MEMORY_CHUNKS[tile.chunkIndex] ?? MEMORY_CHUNKS[0];
-  const completed = tile.day >= 30;
-  const highlighted = tile.readToday || completed;
+  const progress = tile.day > 0 ? Math.min(tile.day / 30, 1) : undefined;
 
   return (
-    <div
-      className={`aspect-square rounded-2xl
-        ${getTileStyle(timeOfDay)}
-        flex items-center justify-center
-        ${highlighted ? `ring-4 ${getRingStyle(timeOfDay)}` : 'shadow-md'}
-        ${pressing ? 'tile-pressing' : 'tile-idle'}
-      `}
+    <TileShell
+      timeOfDay={timeOfDay}
+      progress={progress}
+      pressing={pressing}
       onContextMenu={(e) => { e.preventDefault(); onLongPress(tile); }}
-      {...handlers}
+      handlers={handlers}
     >
       <div className="text-center px-3">
         <div className={`text-xs font-semibold ${colors.secondary} mb-1 tracking-wide leading-tight truncate w-full text-center`} title={chunk.label}>
@@ -43,6 +40,6 @@ export default React.memo(function MemorizationTile({ tile, timeOfDay, onTap, on
           / 30
         </div>
       </div>
-    </div>
+    </TileShell>
   );
 });

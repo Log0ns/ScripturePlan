@@ -1,8 +1,9 @@
 import React, { useCallback } from 'react';
 import { BookOpen } from 'lucide-react';
 import { ScriptureIcon, TimeOfDay } from '../types';
-import { BIBLE_BOOKS, getTileStyle, getTileTextColor } from '../constants';
+import { BIBLE_BOOKS, getTileTextColor } from '../constants';
 import { useLongPress } from '../hooks/useLongPress';
+import TileShell from './TileShell';
 
 type Props = {
   icon: ScriptureIcon;
@@ -11,49 +12,6 @@ type Props = {
   onTap: (icon: ScriptureIcon) => void;
   onLongPress: (icon: ScriptureIcon) => void;
 };
-
-const RING_COLORS: Record<string, string> = {
-  morning: '#fbbf24',
-  afternoon: '#22d3ee',
-  evening: '#fb7185',
-  night: '#fbbf24',
-};
-
-function ProgressBorder({ progress, timeOfDay }: { progress: number; timeOfDay: TimeOfDay }) {
-  const size = 100;
-  const stroke = 3;
-  const r = 16;
-  const half = stroke / 2;
-  const w = size - stroke;
-  const h = size - stroke;
-  const perimeter = 2 * (w - 2 * r) + 2 * (h - 2 * r) + 2 * Math.PI * r;
-  const dash = perimeter * progress;
-  const offset = -((w - 2 * r) / 2);
-
-  return (
-    <svg
-      viewBox={`0 0 ${size} ${size}`}
-      className="absolute inset-0 w-full h-full pointer-events-none"
-      style={{ zIndex: 1 }}
-    >
-      <rect
-        x={half}
-        y={half}
-        width={w}
-        height={h}
-        rx={r}
-        ry={r}
-        fill="none"
-        stroke={RING_COLORS[timeOfDay]}
-        strokeWidth={stroke}
-        strokeDasharray={`${dash} ${perimeter - dash}`}
-        strokeDashoffset={offset}
-        strokeLinecap="round"
-        opacity={0.9}
-      />
-    </svg>
-  );
-}
 
 export default React.memo(function ReadingTile({ icon, timeOfDay, openOnTap, onTap, onLongPress }: Props) {
   const { handlers, pressing } = useLongPress(
@@ -70,47 +28,33 @@ export default React.memo(function ReadingTile({ icon, timeOfDay, openOnTap, onT
   const crt = icon.chaptersReadToday ?? 0;
   const fullyDone = icon.readToday;
   const progress = fullyDone ? 1 : Math.min(crt / cpd, 1);
-  const showRing = fullyDone || crt > 0;
-
-  // Wrapper takes the aspect-square slot; tile is inset by stroke width so ring overlaps the edge
-  const inset = 3;
 
   return (
-    <div
-      className={`aspect-square relative ${pressing ? 'tile-pressing' : 'tile-idle'}`}
+    <TileShell
+      timeOfDay={timeOfDay}
+      progress={fullyDone || crt > 0 ? progress : undefined}
+      pressing={pressing}
       onContextMenu={(e) => { e.preventDefault(); onLongPress(icon); }}
-      {...handlers}
+      handlers={handlers}
     >
-      {/* Tile background, inset so the ring sits on top of its edge */}
-      <div
-        className={`absolute ${getTileStyle(timeOfDay)} flex items-center justify-center shadow-md`}
-        style={{
-          inset,
-          borderRadius: '14%',
-        }}
-      >
-        {openOnTap && hasProgress && (
-          <div className="absolute top-2 right-2">
-            <BookOpen className={`w-3.5 h-3.5 ${colors.muted}`} />
+      {openOnTap && hasProgress && (
+        <div className="absolute top-2 right-2">
+          <BookOpen className={`w-3.5 h-3.5 ${colors.muted}`} />
+        </div>
+      )}
+      <div className="text-center px-3">
+        <div className={`${nameSize} font-semibold ${colors.secondary} mb-1 tracking-wide leading-tight`}>
+          {bookName}
+        </div>
+        <div className={`text-3xl font-light ${colors.primary}`}>
+          {icon.chapter}
+        </div>
+        {icon.endBook !== null && (
+          <div className={`text-xs ${colors.muted} mt-2 leading-tight`}>
+            {BIBLE_BOOKS[icon.startBook].name} — {BIBLE_BOOKS[icon.endBook].name}
           </div>
         )}
-        <div className="text-center px-3">
-          <div className={`${nameSize} font-semibold ${colors.secondary} mb-1 tracking-wide leading-tight`}>
-            {bookName}
-          </div>
-          <div className={`text-3xl font-light ${colors.primary}`}>
-            {icon.chapter}
-          </div>
-          {icon.endBook !== null && (
-            <div className={`text-xs ${colors.muted} mt-2 leading-tight`}>
-              {BIBLE_BOOKS[icon.startBook].name} — {BIBLE_BOOKS[icon.endBook].name}
-            </div>
-          )}
-        </div>
       </div>
-
-      {/* Ring overlaid on top of tile edge */}
-      {showRing && <ProgressBorder progress={progress} timeOfDay={timeOfDay} />}
-    </div>
+    </TileShell>
   );
 });

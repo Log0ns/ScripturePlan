@@ -1,7 +1,8 @@
 import React, { useCallback } from 'react';
 import { CustomTile, TimeOfDay } from '../types';
-import { getTileStyle, getTileTextColor, getRingStyle } from '../constants';
+import { getTileTextColor } from '../constants';
 import { useLongPress } from '../hooks/useLongPress';
+import TileShell from './TileShell';
 
 type Props = {
   tile: CustomTile;
@@ -19,19 +20,16 @@ export default React.memo(function PrayerTile({ tile, timeOfDay, onTap, onLongPr
   const colors = getTileTextColor(timeOfDay);
 
   return (
-    <div
-      className={`aspect-square rounded-2xl
-        ${getTileStyle(timeOfDay)}
-        flex items-center justify-center
-        ${tile.activeToday ? `ring-4 ${getRingStyle(timeOfDay)}` : 'shadow-md'}
-        ${pressing ? 'tile-pressing' : 'tile-idle'}
-      `}
+    <TileShell
+      timeOfDay={timeOfDay}
+      progress={tile.activeToday ? 1 : undefined}
+      pressing={pressing}
       onContextMenu={(e) => { e.preventDefault(); onLongPress(tile); }}
-      {...handlers}
+      handlers={handlers}
     >
       <div className={`text-sm font-medium ${colors.primary} whitespace-pre-wrap text-center px-3`}>
         {tile.items[tile.index] || ''}
       </div>
-    </div>
+    </TileShell>
   );
 });
