@@ -80,7 +80,7 @@ export default React.memo(function ReadingTile({ icon, timeOfDay, openOnTap, onT
         shadow-md
         ${pressing ? 'tile-pressing' : 'tile-idle'}
       `}
-      style={{ borderRadius: '16%' }}
+      style={{ borderRadius: '14.5%' }}
       onContextMenu={(e) => { e.preventDefault(); onLongPress(icon); }}
       {...handlers}
     >
