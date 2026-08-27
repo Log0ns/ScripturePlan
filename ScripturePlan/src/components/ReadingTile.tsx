@@ -71,7 +71,7 @@ export default React.memo(function ReadingTile({ icon, timeOfDay, openOnTap, onT
         flex items-center justify-center
         shadow-md
         ${pressing ? 'tile-pressing' : 'tile-idle'}
-      `}}
+      `}
       onContextMenu={(e) => { e.preventDefault(); onLongPress(icon); }}
       {...handlers}
     >
