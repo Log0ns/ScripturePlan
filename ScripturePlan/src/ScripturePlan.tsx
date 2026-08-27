@@ -428,11 +428,11 @@ export default function Planny() {
               <span className={`text-sm font-semibold tabular-nums ${isNight ? 'text-slate-300' : 'text-slate-700'}`}>{daysCompleted}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-base">🧠</span>
+              <span className={`text-xs font-bold uppercase tracking-wider ${isNight ? 'text-slate-400' : 'text-slate-500'}`}>M</span>
               <span className={`text-sm font-semibold tabular-nums ${isNight ? 'text-slate-300' : 'text-slate-700'}`}>{memoryPoints}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-base">📖</span>
+              <span className={`text-xs font-bold uppercase tracking-wider ${isNight ? 'text-slate-400' : 'text-slate-500'}`}>T</span>
               <span className={`text-sm font-semibold tabular-nums ${isNight ? 'text-slate-300' : 'text-slate-700'}`}>{themePoints}</span>
             </div>
           </div>

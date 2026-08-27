@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, ChevronDown } from 'lucide-react';
+import { Plus, ChevronDown, Pencil } from 'lucide-react';
 import { IconGroup, TimeOfDay } from '../types';
 import { getTileTextColor } from '../constants';
 import { useLongPress } from '../hooks/useLongPress';
@@ -41,24 +41,24 @@ function GroupRow({ group, isActive, timeOfDay, onSwitch, onDelete, onRename, on
   };
 
   const { handlers } = useLongPress(
-    onSwitch,
+    () => {},
     () => setConfirmDelete(true)
   );
 
   if (confirmDelete) {
     return (
-      <div className={`flex items-center justify-between px-4 py-3 rounded-xl ${isNight ? 'bg-red-900/30' : 'bg-red-50'}`}>
-        <span className={`text-sm ${isNight ? 'text-red-300' : 'text-red-600'}`}>Delete "{group.name}"?</span>
+      <div className={`px-4 py-3 rounded-xl ${isNight ? 'bg-red-900/30' : 'bg-red-50'}`}>
+        <p className={`text-sm mb-3 ${isNight ? 'text-red-300' : 'text-red-600'}`}>Delete "{group.name}"?</p>
         <div className="flex gap-2">
           <button
             onClick={() => setConfirmDelete(false)}
-            className={`text-xs px-3 py-1 rounded-lg ${isNight ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-600'}`}
+            className={`flex-1 text-xs px-3 py-1.5 rounded-lg ${isNight ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-600'}`}
           >
             Cancel
           </button>
           <button
             onClick={onDelete}
-            className="text-xs px-3 py-1 rounded-lg bg-red-500 text-white"
+            className="flex-1 text-xs px-3 py-1.5 rounded-lg bg-red-500 text-white"
           >
             Delete
           </button>
@@ -77,27 +77,38 @@ function GroupRow({ group, isActive, timeOfDay, onSwitch, onDelete, onRename, on
       {...(!editing ? handlers : {})}
       onContextMenu={(e) => { e.preventDefault(); setConfirmDelete(true); }}
     >
-      {editing ? (
-        <input
-          ref={inputRef}
-          value={draft}
-          onChange={e => setDraft(e.target.value)}
-          onBlur={commitRename}
-          onKeyDown={e => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') { setDraft(group.name); setEditing(false); onEditingChange(false); } }}
-          maxLength={20}
-          className={`text-sm font-medium bg-transparent border-b outline-none w-32
-            ${isActive ? (isNight ? 'text-amber-300 border-amber-400' : 'text-amber-800 border-amber-400') : `${colors.primary} ${isNight ? 'border-slate-500' : 'border-slate-400'}`}
-          `}
-        />
-      ) : (
-        <span
-          className={`text-sm font-medium ${isActive ? (isNight ? 'text-amber-300' : 'text-amber-800') : colors.primary}`}
-          onClick={(e) => { e.stopPropagation(); setEditing(true); setDraft(group.name); onEditingChange(true); }}
-        >
-          {group.name}
-        </span>
-      )}
-      <span className={`text-xs ${isNight ? 'text-slate-500' : 'text-slate-400'}`}>
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        {!isActive && !editing && (
+          <button onClick={() => { onSwitch(); }} className="flex-1 text-left">
+            <span className={`text-sm font-medium ${colors.primary}`}>{group.name}</span>
+          </button>
+        )}
+        {isActive && !editing && (
+          <span className={`text-sm font-medium ${isNight ? 'text-amber-300' : 'text-amber-800'} flex-1`}>{group.name}</span>
+        )}
+        {editing && (
+          <input
+            ref={inputRef}
+            value={draft}
+            onChange={e => setDraft(e.target.value)}
+            onBlur={commitRename}
+            onKeyDown={e => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') { setDraft(group.name); setEditing(false); onEditingChange(false); } }}
+            maxLength={20}
+            className={`text-sm font-medium bg-transparent border-b outline-none flex-1 min-w-0
+              ${isActive ? (isNight ? 'text-amber-300 border-amber-400' : 'text-amber-800 border-amber-400') : `${colors.primary} ${isNight ? 'border-slate-500' : 'border-slate-400'}`}
+            `}
+          />
+        )}
+        {!editing && (
+          <button
+            onClick={(e) => { e.stopPropagation(); setEditing(true); setDraft(group.name); onEditingChange(true); }}
+            className={`p-1 ${isNight ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
+          >
+            <Pencil className="w-3 h-3" />
+          </button>
+        )}
+      </div>
+      <span className={`text-xs ${isNight ? 'text-slate-500' : 'text-slate-400'} ml-2 shrink-0`}>
         {group.icons.length} tile{group.icons.length !== 1 ? 's' : ''}
       </span>
     </div>

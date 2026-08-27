@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { BookOpen } from 'lucide-react';
 import { ScriptureIcon, TimeOfDay } from '../types';
-import { BIBLE_BOOKS, getTileStyle, getTileTextColor, getRingStyle } from '../constants';
+import { BIBLE_BOOKS, getTileStyle, getTileTextColor } from '../constants';
 import { useLongPress } from '../hooks/useLongPress';
 
 type Props = {
@@ -20,24 +20,21 @@ const RING_COLORS: Record<string, string> = {
 };
 
 function ProgressRing({ progress, timeOfDay }: { progress: number; timeOfDay: TimeOfDay }) {
-  // progress: 0–1
-  const size = 120;
-  const stroke = 4;
-  const r = (size - stroke) / 2;
+  const stroke = 6;
+  const r = 50 - stroke / 2;
   const circ = 2 * Math.PI * r;
   const dash = circ * progress;
   const color = RING_COLORS[timeOfDay];
 
   return (
     <svg
-      width={size}
-      height={size}
+      viewBox="0 0 100 100"
       className="absolute inset-0 w-full h-full"
       style={{ transform: 'rotate(-90deg)' }}
     >
       <circle
-        cx={size / 2}
-        cy={size / 2}
+        cx={50}
+        cy={50}
         r={r}
         fill="none"
         stroke={color}
@@ -64,17 +61,17 @@ export default React.memo(function ReadingTile({ icon, timeOfDay, openOnTap, onT
   const cpd = icon.chaptersPerDay ?? 1;
   const crt = icon.chaptersReadToday ?? 0;
   const fullyDone = icon.readToday;
-  const progress = fullyDone ? 1 : cpd > 1 ? Math.min(crt / cpd, 1) : 0;
-  const showRing = fullyDone || (cpd > 1 && crt > 0);
+  const progress = fullyDone ? 1 : Math.min(crt / cpd, 1);
+  const showRing = fullyDone || crt > 0;
 
   return (
     <div
       className={`aspect-square rounded-2xl relative
         ${getTileStyle(timeOfDay)}
         flex items-center justify-center
-        ${fullyDone && cpd === 1 ? `ring-4 ${getRingStyle(timeOfDay)}` : 'shadow-md'}
+        shadow-md
         ${pressing ? 'tile-pressing' : 'tile-idle'}
-      `}
+      `}}
       onContextMenu={(e) => { e.preventDefault(); onLongPress(icon); }}
       {...handlers}
     >
