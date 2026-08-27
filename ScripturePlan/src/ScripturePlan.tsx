@@ -138,7 +138,7 @@ export default function Planny() {
       const cpd = icon.chaptersPerDay ?? 1;
       const crt = (icon.chaptersReadToday ?? 0) + 1;
       const done = crt >= cpd;
-      const advanced = done ? advanceChapter(icon) : icon;
+      const advanced = advanceChapter(icon);
       setIcons(prev => prev.map(i =>
         i.id === icon.id
           ? { ...advanced, chaptersReadToday: done ? 0 : crt, readToday: done }
@@ -478,7 +478,7 @@ export default function Planny() {
             const cpd = readingIcon.chaptersPerDay ?? 1;
             const crt = (readingIcon.chaptersReadToday ?? 0) + 1;
             const done = crt >= cpd;
-            const advanced = done ? advanceChapter(readingIcon) : readingIcon;
+            const advanced = advanceChapter(readingIcon);
             setIcons(prev => prev.map(i =>
               i.id === readingIcon.id
                 ? { ...advanced, chaptersReadToday: done ? 0 : crt, readToday: done }
