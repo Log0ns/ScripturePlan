@@ -1,8 +1,8 @@
 import { ScriptureIcon } from '../types';
 
 export const DEFAULT_ICONS: ScriptureIcon[] = [
-  { id: 1, bookIndex: 0, chapter: 1, startBook: 0, startChapter: 1, endBook: 38, endChapter: 4, readToday: false },
-  { id: 2, bookIndex: 39, chapter: 1, startBook: 39, startChapter: 1, endBook: 65, endChapter: 22, readToday: false },
+  { id: 1, bookIndex: 0, chapter: 1, startBook: 0, startChapter: 1, endBook: 38, endChapter: 4, readToday: false, chaptersPerDay: 1, chaptersReadToday: 0 },
+  { id: 2, bookIndex: 39, chapter: 1, startBook: 39, startChapter: 1, endBook: 65, endChapter: 22, readToday: false, chaptersPerDay: 1, chaptersReadToday: 0 },
 ];
 
 export const READING_PLANS: Record<string, Omit<ScriptureIcon, 'readToday'>[]> = {

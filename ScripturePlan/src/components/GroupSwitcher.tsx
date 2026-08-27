@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, ChevronDown, Pencil } from 'lucide-react';
+import { Plus, ChevronDown, Pencil, Trash2 } from 'lucide-react';
 import { IconGroup, TimeOfDay } from '../types';
 import { getTileTextColor } from '../constants';
-import { useLongPress } from '../hooks/useLongPress';
 
 type Props = {
   groups: IconGroup[];
@@ -40,11 +39,6 @@ function GroupRow({ group, isActive, timeOfDay, onSwitch, onDelete, onRename, on
     onEditingChange(false);
   };
 
-  const { handlers } = useLongPress(
-    () => {},
-    () => setConfirmDelete(true)
-  );
-
   if (confirmDelete) {
     return (
       <div className={`px-4 py-3 rounded-xl ${isNight ? 'bg-red-900/30' : 'bg-red-50'}`}>
@@ -68,49 +62,59 @@ function GroupRow({ group, isActive, timeOfDay, onSwitch, onDelete, onRename, on
   }
 
   return (
-    <div
-      className={`flex items-center justify-between px-4 py-3 rounded-xl transition-colors
-        ${isActive
-          ? (isNight ? 'bg-amber-400/20 border border-amber-400/40' : 'bg-amber-100 border border-amber-300')
-          : (isNight ? 'bg-slate-800/60 cursor-pointer' : 'bg-white/60 cursor-pointer')
-        }`}
-      {...(!editing ? handlers : {})}
-      onContextMenu={(e) => { e.preventDefault(); setConfirmDelete(true); }}
+    <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl
+      ${isActive
+        ? (isNight ? 'bg-amber-400/20 border border-amber-400/40' : 'bg-amber-100 border border-amber-300')
+        : (isNight ? 'bg-slate-800/60' : 'bg-white/60')
+      }`}
     >
-      <div className="flex items-center gap-2 flex-1 min-w-0">
-        {!isActive && !editing && (
-          <button onClick={() => { onSwitch(); }} className="flex-1 text-left">
-            <span className={`text-sm font-medium ${colors.primary}`}>{group.name}</span>
-          </button>
-        )}
-        {isActive && !editing && (
-          <span className={`text-sm font-medium ${isNight ? 'text-amber-300' : 'text-amber-800'} flex-1`}>{group.name}</span>
-        )}
-        {editing && (
-          <input
-            ref={inputRef}
-            value={draft}
-            onChange={e => setDraft(e.target.value)}
-            onBlur={commitRename}
-            onKeyDown={e => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') { setDraft(group.name); setEditing(false); onEditingChange(false); } }}
-            maxLength={20}
-            className={`text-sm font-medium bg-transparent border-b outline-none flex-1 min-w-0
-              ${isActive ? (isNight ? 'text-amber-300 border-amber-400' : 'text-amber-800 border-amber-400') : `${colors.primary} ${isNight ? 'border-slate-500' : 'border-slate-400'}`}
-            `}
-          />
-        )}
-        {!editing && (
-          <button
-            onClick={(e) => { e.stopPropagation(); setEditing(true); setDraft(group.name); onEditingChange(true); }}
-            className={`p-1 ${isNight ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
-          >
-            <Pencil className="w-3 h-3" />
-          </button>
-        )}
-      </div>
-      <span className={`text-xs ${isNight ? 'text-slate-500' : 'text-slate-400'} ml-2 shrink-0`}>
-        {group.icons.length} tile{group.icons.length !== 1 ? 's' : ''}
-      </span>
+      {/* Switch button (inactive only) */}
+      {!isActive && !editing && (
+        <button
+          onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); onSwitch(); }}
+          onClick={onSwitch}
+          className="flex-1 text-left py-0.5"
+        >
+          <span className={`text-sm font-medium ${colors.primary}`}>{group.name}</span>
+        </button>
+      )}
+      {isActive && !editing && (
+        <span className={`text-sm font-medium flex-1 ${isNight ? 'text-amber-300' : 'text-amber-800'}`}>{group.name}</span>
+      )}
+      {editing && (
+        <input
+          ref={inputRef}
+          value={draft}
+          onChange={e => setDraft(e.target.value)}
+          onBlur={commitRename}
+          onKeyDown={e => {
+            if (e.key === 'Enter') commitRename();
+            if (e.key === 'Escape') { setDraft(group.name); setEditing(false); onEditingChange(false); }
+          }}
+          maxLength={20}
+          className={`text-sm font-medium bg-transparent border-b outline-none flex-1 min-w-0
+            ${isActive ? (isNight ? 'text-amber-300 border-amber-400' : 'text-amber-800 border-amber-400') : `${colors.primary} ${isNight ? 'border-slate-500' : 'border-slate-400'}`}
+          `}
+        />
+      )}
+      {!editing && (
+        <button
+          onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); setEditing(true); setDraft(group.name); onEditingChange(true); }}
+          onClick={(e) => { e.stopPropagation(); setEditing(true); setDraft(group.name); onEditingChange(true); }}
+          className={`p-1 shrink-0 ${isNight ? 'text-slate-500' : 'text-slate-400'}`}
+        >
+          <Pencil className="w-3 h-3" />
+        </button>
+      )}
+      {!editing && (
+        <button
+          onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmDelete(true); }}
+          onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); }}
+          className={`p-1 shrink-0 ${isNight ? 'text-slate-600' : 'text-slate-300'}`}
+        >
+          <Trash2 className="w-3 h-3" />
+        </button>
+      )}
     </div>
   );
 }

@@ -22,19 +22,19 @@ const RING_COLORS: Record<string, string> = {
 function ProgressBorder({ progress, timeOfDay }: { progress: number; timeOfDay: TimeOfDay }) {
   const size = 100;
   const stroke = 3;
-  const r = 16; // matches rounded-2xl (16px at 100-unit scale)
+  const r = 16;
   const half = stroke / 2;
   const w = size - stroke;
   const h = size - stroke;
-  // Perimeter of a rounded rect: 4 straight segments + 4 quarter-circle arcs
   const perimeter = 2 * (w - 2 * r) + 2 * (h - 2 * r) + 2 * Math.PI * r;
   const dash = perimeter * progress;
+  // SVG rect starts at (x+rx, y) and moves right, so top-center offset = half top straight segment
+  const offset = -((w - 2 * r) / 2);
 
   return (
     <svg
       viewBox={`0 0 ${size} ${size}`}
       className="absolute inset-0 w-full h-full pointer-events-none"
-      style={{ transform: 'rotate(-90deg)' }}
     >
       <rect
         x={half}
@@ -47,6 +47,7 @@ function ProgressBorder({ progress, timeOfDay }: { progress: number; timeOfDay: 
         stroke={RING_COLORS[timeOfDay]}
         strokeWidth={stroke}
         strokeDasharray={`${dash} ${perimeter - dash}`}
+        strokeDashoffset={offset}
         strokeLinecap="round"
         opacity={0.9}
       />
@@ -73,7 +74,7 @@ export default React.memo(function ReadingTile({ icon, timeOfDay, openOnTap, onT
 
   return (
     <div
-      className={`aspect-square rounded-2xl relative overflow-hidden
+      className={`aspect-square rounded-2xl relative
         ${getTileStyle(timeOfDay)}
         flex items-center justify-center
         shadow-md
