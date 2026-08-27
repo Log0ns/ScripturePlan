@@ -28,13 +28,13 @@ function ProgressBorder({ progress, timeOfDay }: { progress: number; timeOfDay: 
   const h = size - stroke;
   const perimeter = 2 * (w - 2 * r) + 2 * (h - 2 * r) + 2 * Math.PI * r;
   const dash = perimeter * progress;
-  // SVG rect starts at (x+rx, y) and moves right, so top-center offset = half top straight segment
   const offset = -((w - 2 * r) / 2);
 
   return (
     <svg
       viewBox={`0 0 ${size} ${size}`}
       className="absolute inset-0 w-full h-full pointer-events-none"
+      style={{ zIndex: 1 }}
     >
       <rect
         x={half}
@@ -72,37 +72,45 @@ export default React.memo(function ReadingTile({ icon, timeOfDay, openOnTap, onT
   const progress = fullyDone ? 1 : Math.min(crt / cpd, 1);
   const showRing = fullyDone || crt > 0;
 
+  // Wrapper takes the aspect-square slot; tile is inset by stroke width so ring overlaps the edge
+  const inset = 3;
+
   return (
     <div
-      className={`aspect-square relative
-        ${getTileStyle(timeOfDay)}
-        flex items-center justify-center
-        shadow-md
-        ${pressing ? 'tile-pressing' : 'tile-idle'}
-      `}
-      style={{ borderRadius: '14.5%' }}
+      className={`aspect-square relative ${pressing ? 'tile-pressing' : 'tile-idle'}`}
       onContextMenu={(e) => { e.preventDefault(); onLongPress(icon); }}
       {...handlers}
     >
-      {showRing && <ProgressBorder progress={progress} timeOfDay={timeOfDay} />}
-      {openOnTap && hasProgress && (
-        <div className="absolute top-2 right-2">
-          <BookOpen className={`w-3.5 h-3.5 ${colors.muted}`} />
-        </div>
-      )}
-      <div className="text-center px-3">
-        <div className={`${nameSize} font-semibold ${colors.secondary} mb-1 tracking-wide leading-tight`}>
-          {bookName}
-        </div>
-        <div className={`text-3xl font-light ${colors.primary}`}>
-          {icon.chapter}
-        </div>
-        {icon.endBook !== null && (
-          <div className={`text-xs ${colors.muted} mt-2 leading-tight`}>
-            {BIBLE_BOOKS[icon.startBook].name} — {BIBLE_BOOKS[icon.endBook].name}
+      {/* Tile background, inset so the ring sits on top of its edge */}
+      <div
+        className={`absolute ${getTileStyle(timeOfDay)} flex items-center justify-center shadow-md`}
+        style={{
+          inset,
+          borderRadius: '14%',
+        }}
+      >
+        {openOnTap && hasProgress && (
+          <div className="absolute top-2 right-2">
+            <BookOpen className={`w-3.5 h-3.5 ${colors.muted}`} />
           </div>
         )}
+        <div className="text-center px-3">
+          <div className={`${nameSize} font-semibold ${colors.secondary} mb-1 tracking-wide leading-tight`}>
+            {bookName}
+          </div>
+          <div className={`text-3xl font-light ${colors.primary}`}>
+            {icon.chapter}
+          </div>
+          {icon.endBook !== null && (
+            <div className={`text-xs ${colors.muted} mt-2 leading-tight`}>
+              {BIBLE_BOOKS[icon.startBook].name} — {BIBLE_BOOKS[icon.endBook].name}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Ring overlaid on top of tile edge */}
+      {showRing && <ProgressBorder progress={progress} timeOfDay={timeOfDay} />}
     </div>
   );
 });
