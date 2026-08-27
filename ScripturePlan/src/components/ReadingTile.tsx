@@ -46,8 +46,9 @@ export default React.memo(function ReadingTile({ icon, timeOfDay, openOnTap, onT
         <div className={`${nameSize} font-semibold ${colors.secondary} mb-1 tracking-wide leading-tight`}>
           {bookName}
         </div>
-        <div className={`text-3xl font-light ${colors.primary}`}>
-          {icon.chapter}
+        <div className="flex items-baseline justify-center gap-1">
+          <div className={`text-3xl font-light ${colors.primary}`}>{icon.chapter}</div>
+          {cpd > 1 && <div className={`text-xs font-semibold ${colors.muted}`}>×{cpd}</div>}
         </div>
         {icon.endBook !== null && (
           <div className={`text-xs ${colors.muted} mt-2 leading-tight`}>

@@ -57,11 +57,18 @@ type Props = {
 export default function TileShell({ timeOfDay, progress, pressing, onContextMenu, handlers, children }: Props) {
   const showRing = progress !== undefined && progress > 0;
   const inset = 3;
+  const [contextPressing, setContextPressing] = React.useState(false);
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    setContextPressing(true);
+    setTimeout(() => setContextPressing(false), 200);
+    onContextMenu(e);
+  };
 
   return (
     <div
-      className={`aspect-square relative ${pressing ? 'tile-pressing' : 'tile-idle'}`}
-      onContextMenu={onContextMenu}
+      className={`aspect-square relative ${pressing || contextPressing ? 'tile-pressing' : 'tile-idle'}`}
+      onContextMenu={handleContextMenu}
       {...handlers}
     >
       <div
