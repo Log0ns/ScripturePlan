@@ -85,18 +85,6 @@ export default function MemoryTileModal({ tile, allTiles, completedChunks, onUpd
 
           {/* Actions */}
           <div className="space-y-3">
-            <div className="flex items-center mb-2">
-              <input
-                type="checkbox"
-                id="memReadToday"
-                className="mr-2 h-4 w-4 accent-amber-500"
-                checked={tile.readToday || false}
-                onChange={(e) => onUpdate({ readToday: e.target.checked })}
-              />
-              <label htmlFor="memReadToday" className="text-slate-300 text-sm">
-                Highlighted
-              </label>
-            </div>
             <button
               onClick={() => onUpdate({ day: 0, readToday: false })}
               className="w-full flex items-center gap-3 p-3 bg-slate-700 text-slate-200 rounded-xl hover:bg-slate-600 transition-colors"

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { ScriptureIcon } from '../types';
 import { BIBLE_BOOKS } from '../constants';
@@ -14,6 +14,7 @@ type Props = {
 const selectClass = "w-full p-3 border border-slate-600 rounded-xl bg-slate-700 text-slate-100 focus:outline-none focus:border-amber-500";
 
 export default function SettingsModal({ icon, canDelete, onUpdate, onDelete, onClose }: Props) {
+  const [cpdDraft, setCpdDraft] = useState(String(icon.chaptersPerDay ?? 1));
   return (
     <div className="fixed inset-0 z-50 animate-fade-in">
       <div className="bg-slate-800 w-full h-full overflow-y-auto animate-slide-up">
@@ -45,8 +46,14 @@ export default function SettingsModal({ icon, canDelete, onUpdate, onDelete, onC
             type="number"
             min={1}
             max={99}
-            value={icon.chaptersPerDay ?? 1}
-            onChange={(e) => onUpdate({ chaptersPerDay: Math.max(1, parseInt(e.target.value) || 1), chaptersReadToday: 0 })}
+            value={cpdDraft}
+            onChange={(e) => setCpdDraft(e.target.value)}
+            onBlur={() => {
+              const n = parseInt(cpdDraft);
+              const valid = !isNaN(n) && n >= 1 ? n : 1;
+              setCpdDraft(String(valid));
+              onUpdate({ chaptersPerDay: valid, chaptersReadToday: 0 });
+            }}
             className="w-24 p-3 border border-slate-600 rounded-xl bg-slate-700 text-slate-100 focus:outline-none focus:border-amber-500"
           />
         </div>
