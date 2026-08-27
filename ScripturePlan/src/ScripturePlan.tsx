@@ -139,17 +139,21 @@ export default function Planny() {
       const crt = (icon.chaptersReadToday ?? 0) + 1;
       const done = crt >= cpd;
       const advanced = advanceChapter(icon);
-      setIcons(prev => prev.map(i =>
-        i.id === icon.id
-          ? { ...advanced, chaptersReadToday: done ? 0 : crt, readToday: done }
-          : i
+      setIconGroups(prev => prev.map(g =>
+        g.id === activeGroup.id
+          ? { ...g, icons: g.icons.map(i =>
+              i.id === icon.id
+                ? { ...advanced, chaptersReadToday: done ? 0 : crt, readToday: done }
+                : i
+            )}
+          : g
       ));
       if (done && themeOnTap) {
         setThemeTarget({ bookIndex: icon.bookIndex, chapter: icon.chapter });
         switchTab('themes', true);
       }
     }
-  }, [openOnTap, themeOnTap, online]);
+  }, [openOnTap, themeOnTap, online, activeGroup.id]);
 
   const handleLongPress = useCallback((icon: ScriptureIcon) => {
     if (!online) return;
@@ -310,7 +314,15 @@ export default function Planny() {
 
   const applyPlan = (plan: string) => {
     const planIcons = READING_PLANS[plan] || READING_PLANS.Default;
-    setIcons(planIcons.map(p => ({ ...p, readToday: false })) as ScriptureIcon[]);
+    setIcons(planIcons.map(p => {
+      const existing = icons.find(i => i.id === p.id);
+      return {
+        ...p,
+        readToday: false,
+        chaptersPerDay: 1,
+        chaptersReadToday: 0,
+      } as ScriptureIcon;
+    }));
   };
 
 

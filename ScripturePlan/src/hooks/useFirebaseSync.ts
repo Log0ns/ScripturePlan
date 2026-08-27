@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { User } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -34,6 +34,7 @@ export function useFirebaseSync(
   callbacks: SyncCallbacks
 ) {
   const readyToPush = useRef(false);
+  const pendingPushRef = useRef(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dataRef = useRef(data);
   dataRef.current = data;
@@ -57,6 +58,13 @@ export function useFirebaseSync(
     lastPulledAt.current = t;
     try { localStorage.setItem('planny-lastSync', String(t)); } catch {}
   };
+
+  const doPush = useCallback(() => {
+    const now = Date.now();
+    persistSyncTime(now);
+    const ref = doc(db, 'users', user!.uid);
+    setDoc(ref, { ...dataRef.current, lastModified: now }, { merge: true }).catch(console.error);
+  }, [user]);
 
   const uid = user?.uid ?? null;
 
@@ -111,10 +119,18 @@ export function useFirebaseSync(
             }
           }
         }
-        setTimeout(() => { readyToPush.current = true; }, 500);
+        readyToPush.current = true;
+        if (pendingPushRef.current) {
+          pendingPushRef.current = false;
+          doPush();
+        }
       }).catch(err => {
         console.error(err);
         readyToPush.current = true;
+        if (pendingPushRef.current) {
+          pendingPushRef.current = false;
+          doPush();
+        }
       });
     };
 
@@ -124,13 +140,14 @@ export function useFirebaseSync(
   }, [uid]);
 
   useEffect(() => {
-    if (!uid || !readyToPush.current) return;
+    if (!uid) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      const now = Date.now();
-      persistSyncTime(now);
-      const ref = doc(db, 'users', uid);
-      setDoc(ref, { ...dataRef.current, lastModified: now }, { merge: true }).catch(console.error);
+      if (!readyToPush.current) {
+        pendingPushRef.current = true;
+      } else {
+        doPush();
+      }
       debounceRef.current = null;
     }, 1000);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
@@ -138,15 +155,11 @@ export function useFirebaseSync(
 
   useEffect(() => {
     const flush = () => {
-      if (!uid || !debounceRef.current) return;
-      clearTimeout(debounceRef.current);
-      debounceRef.current = null;
-      const now = Date.now();
-      persistSyncTime(now);
-      const ref = doc(db, 'users', uid);
-      setDoc(ref, { ...dataRef.current, lastModified: now }, { merge: true }).catch(console.error);
+      if (!uid) return;
+      if (debounceRef.current) { clearTimeout(debounceRef.current); debounceRef.current = null; }
+      doPush();
     };
     window.addEventListener('beforeunload', flush);
     return () => window.removeEventListener('beforeunload', flush);
-  }, [uid]);
+  }, [uid, doPush]);
 }
