@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronDown, ChevronRight, ArrowLeft, Mic, MicOff } from 'lucide-react';
+import { ChevronDown, ChevronRight, ChevronLeft, ArrowLeft, Mic, MicOff } from 'lucide-react';
 import { TimeOfDay, Themes } from '../types';
 import { BIBLE_BOOKS, getFilledStyle } from '../constants';
 
@@ -59,15 +59,10 @@ export default function ThemesTab({ themes, timeOfDay, onChange, initialView }: 
 
   const draftRef = useRef(draft);
   draftRef.current = draft;
+  const listeningRef = useRef(false);
 
   // VTT
-  const toggleListening = () => {
-    if (!hasVTT) return;
-    if (listening) {
-      recognitionRef.current?.stop();
-      setListening(false);
-      return;
-    }
+  const startRecognition = () => {
     const rec = new SpeechRecognition();
     rec.continuous = true;
     rec.interimResults = false;
@@ -77,15 +72,34 @@ export default function ThemesTab({ themes, timeOfDay, onChange, initialView }: 
         .join('');
       handleDraftChange((draftRef.current + ' ' + transcript).trim().slice(0, MAX_CHARS));
     };
-    rec.onend = () => setListening(false);
+    rec.onend = () => {
+      // Auto-restart if user hasn't manually stopped (browser kills on silence)
+      if (listeningRef.current) {
+        try { rec.start(); } catch {}
+      } else {
+        setListening(false);
+      }
+    };
     rec.start();
     recognitionRef.current = rec;
+  };
+
+  const toggleListening = () => {
+    if (!hasVTT) return;
+    if (listeningRef.current) {
+      listeningRef.current = false;
+      recognitionRef.current?.stop();
+      setListening(false);
+      return;
+    }
+    listeningRef.current = true;
     setListening(true);
+    startRecognition();
   };
 
   // Stop listening when leaving editor
   const goBack = () => {
-    if (listening) { recognitionRef.current?.stop(); setListening(false); }
+    if (listeningRef.current) { listeningRef.current = false; recognitionRef.current?.stop(); setListening(false); }
     if (view.kind === 'editor') setView({ kind: 'chapters', bookIndex: view.bookIndex });
     else if (view.kind === 'chapters') setView({ kind: 'list' });
   };
@@ -118,6 +132,21 @@ export default function ThemesTab({ themes, timeOfDay, onChange, initialView }: 
   // --- Editor view ---
   if (view.kind === 'editor') {
     const book = BIBLE_BOOKS[view.bookIndex];
+    const isFirst = view.bookIndex === 0 && view.chapter === 1;
+    const isLast = view.bookIndex === BIBLE_BOOKS.length - 1 && view.chapter === BIBLE_BOOKS[view.bookIndex].chapters;
+
+    const goChapter = (delta: 1 | -1) => {
+      let { bookIndex, chapter } = view;
+      if (delta === 1) {
+        if (chapter < BIBLE_BOOKS[bookIndex].chapters) chapter++;
+        else { bookIndex++; chapter = 1; }
+      } else {
+        if (chapter > 1) chapter--;
+        else { bookIndex--; chapter = BIBLE_BOOKS[bookIndex].chapters; }
+      }
+      setView({ kind: 'editor', bookIndex, chapter });
+    };
+
     return (
       <div>
         <button onClick={goBack} className={`flex items-center gap-1 mb-4 ${isNight ? 'text-slate-400' : 'text-slate-500'}`}>
@@ -125,8 +154,18 @@ export default function ThemesTab({ themes, timeOfDay, onChange, initialView }: 
           <span className="text-xs font-medium">{book.name} {view.chapter}</span>
         </button>
 
-        <div className={`text-sm font-medium mb-2 ${isNight ? 'text-slate-200' : 'text-slate-700'}`}>
-          {book.name} — Chapter {view.chapter}
+        <div className={`flex items-center justify-between mb-2`}>
+          <div className={`text-sm font-medium ${isNight ? 'text-slate-200' : 'text-slate-700'}`}>
+            {book.name} — Chapter {view.chapter}
+          </div>
+          <div className="flex items-center gap-1">
+            <button onClick={() => goChapter(-1)} disabled={isFirst} className={`p-1 rounded-lg transition-colors ${isFirst ? 'opacity-30' : isNight ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}>
+              <ChevronLeft className={`w-4 h-4 ${isNight ? 'text-slate-400' : 'text-slate-500'}`} />
+            </button>
+            <button onClick={() => goChapter(1)} disabled={isLast} className={`p-1 rounded-lg transition-colors ${isLast ? 'opacity-30' : isNight ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}>
+              <ChevronRight className={`w-4 h-4 ${isNight ? 'text-slate-400' : 'text-slate-500'}`} />
+            </button>
+          </div>
         </div>
 
         <div className="relative">

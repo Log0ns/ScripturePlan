@@ -153,7 +153,7 @@ export default function Planny() {
             )}
           : g
       ));
-      if (done && themeOnTap) {
+      if (themeOnTap) {
         setThemeTarget({ bookIndex: icon.bookIndex, chapter: icon.chapter });
         switchTab('themes', true);
       }
@@ -501,6 +501,10 @@ export default function Planny() {
                 ? { ...advanced, chaptersReadToday: done ? 0 : crt, readToday: done }
                 : i
             ));
+            if (themeOnTap) {
+              setThemeTarget({ bookIndex: readingIcon.bookIndex, chapter: readingIcon.chapter });
+              switchTab('themes', true);
+            }
             setReadingIcon(null);
           }}
           onClose={() => setReadingIcon(null)}
