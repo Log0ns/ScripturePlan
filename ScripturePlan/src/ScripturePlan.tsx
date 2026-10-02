@@ -5,7 +5,8 @@ import { BIBLE_BOOKS, DEFAULT_ICONS, READING_PLANS, MEMORY_CHUNKS, getTimeOfDay,
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useAuth } from './hooks/useAuth';
 import { useFirebaseSync } from './hooks/useFirebaseSync';
-import { ReadingTile, PrayerTile, MemorizationTile, SettingsModal, GlobalSettingsModal, CustomTileSettings, ChapterReader, MemoryTileModal, ThemesTab, GroupSwitcher } from './components';
+import { useThemeMemory } from './hooks/useThemeMemory';
+import { ReadingTile, PrayerTile, MemorizationTile, SettingsModal, GlobalSettingsModal, CustomTileSettings, ChapterReader, MemoryTileModal, ThemesTab, GroupSwitcher, StudySession } from './components';
 
 type Tab = 'reading' | 'memorization' | 'themes' | 'prayer';
 
@@ -44,8 +45,10 @@ export default function Planny() {
 
   const { user, loading, signIn, logOut } = useAuth();
 
-  const syncData = useMemo(() => ({ iconGroups, activeGroupId, customTiles, memoryTiles, themes, completedChunks, daysCompleted, lastResetDate }), [iconGroups, activeGroupId, customTiles, memoryTiles, themes, completedChunks, daysCompleted, lastResetDate]);
-  useFirebaseSync(user, syncData, { setIconGroups, setActiveGroupId, setCustomTiles, setMemoryTiles, setThemes, setCompletedChunks, setDaysCompleted, setLastResetDate });
+  const { store: memoryStore, updateMemory, getDueCards, clearMemory, resetMemory, setThemeMemoryStore } = useThemeMemory();
+
+  const syncData = useMemo(() => ({ iconGroups, activeGroupId, customTiles, memoryTiles, themes, completedChunks, daysCompleted, lastResetDate, themeMemoryStore: memoryStore }), [iconGroups, activeGroupId, customTiles, memoryTiles, themes, completedChunks, daysCompleted, lastResetDate, memoryStore]);
+  useFirebaseSync(user, syncData, { setIconGroups, setActiveGroupId, setCustomTiles, setMemoryTiles, setThemes, setCompletedChunks, setDaysCompleted, setLastResetDate, setThemeMemoryStore });
 
   const activeGroup = iconGroups.find(g => g.id === activeGroupId) ?? iconGroups[0];
   const icons = activeGroup?.icons ?? [];
@@ -66,6 +69,7 @@ export default function Planny() {
   const [selectedMemoryTile, setSelectedMemoryTile] = useState<MemoryTile | null>(null);
   const [showGlobalSettings, setShowGlobalSettings] = useState(false);
   const [readingIcon, setReadingIcon] = useState<ScriptureIcon | null>(null);
+  const [studyBookIndex, setStudyBookIndex] = useState<number | 'OT' | 'NT' | null>(null);
   const [online, setOnline] = useState(navigator.onLine);
 
   const isNight = timeOfDay === 'night';
@@ -416,6 +420,9 @@ export default function Planny() {
               themes={themes}
               timeOfDay={timeOfDay}
               onChange={handleThemeChange}
+              memoryStore={memoryStore}
+              onStudy={setStudyBookIndex}
+              onResetMemory={resetMemory}
               initialView={themeTarget ? { kind: 'editor', bookIndex: themeTarget.bookIndex, chapter: themeTarget.chapter } : undefined}
             />
           )}
@@ -473,6 +480,7 @@ export default function Planny() {
           onApplyPlan={applyPlan}
           onResetDayCounter={() => setDaysCompleted(0)}
           onClearMemoryProgress={() => setCompletedChunks([])}
+          onClearSRSProgress={clearMemory}
           onClearThemes={() => {
             if (themeDebounceRef.current) { clearTimeout(themeDebounceRef.current); themeDebounceRef.current = null; }
             pendingThemeRef.current = null;
@@ -540,6 +548,29 @@ export default function Planny() {
           onClose={() => setSelectedCustomTile(null)}
         />
       )}
+
+      {studyBookIndex !== null && (() => {
+        const today = new Date().toISOString().slice(0, 10);
+        const allDue = typeof studyBookIndex === 'number'
+          ? getDueCards(studyBookIndex, themes)
+          : BIBLE_BOOKS.flatMap((b, i) =>
+              b.testament === studyBookIndex ? getDueCards(i, themes) : []
+            ).sort((a, b) => {
+              if (a.memory.status === 'new' && b.memory.status !== 'new') return -1;
+              if (b.memory.status === 'new' && a.memory.status !== 'new') return 1;
+              return a.memory.dueDate.localeCompare(b.memory.dueDate);
+            });
+        const cards = allDue;
+        return (
+          <StudySession
+            cards={cards}
+            themes={themes}
+            timeOfDay={timeOfDay}
+            onUpdateMemory={updateMemory}
+            onClose={() => setStudyBookIndex(null)}
+          />
+        );
+      })()}
 
       {selectedMemoryTile && (
         <MemoryTileModal

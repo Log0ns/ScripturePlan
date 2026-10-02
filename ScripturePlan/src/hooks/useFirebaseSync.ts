@@ -1,8 +1,8 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { User } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, getDocs, collection, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
-import { IconGroup, CustomTile, MemoryTile, Themes, CompletedChunks } from '../types';
+import { IconGroup, CustomTile, MemoryTile, Themes, CompletedChunks, ThemeMemoryStore } from '../types';
 
 type SyncData = {
   iconGroups: IconGroup[];
@@ -13,6 +13,7 @@ type SyncData = {
   completedChunks: CompletedChunks;
   daysCompleted: number;
   lastResetDate: string;
+  themeMemoryStore: ThemeMemoryStore;
 };
 
 type SyncCallbacks = {
@@ -24,9 +25,10 @@ type SyncCallbacks = {
   setCompletedChunks: (v: CompletedChunks) => void;
   setDaysCompleted: (v: number) => void;
   setLastResetDate: (v: string) => void;
+  setThemeMemoryStore: (v: ThemeMemoryStore) => void;
 };
 
-type RemoteDoc = SyncData & { lastModified: number };
+type RemoteDoc = Omit<SyncData, 'themeMemoryStore'> & { lastModified: number };
 
 export function useFirebaseSync(
   user: User | null,
@@ -41,6 +43,7 @@ export function useFirebaseSync(
   const lastPulledAt = useRef(
     (() => { try { return Number(localStorage.getItem('planny-lastSync')) || 0; } catch { return 0; } })()
   );
+  const remoteSRSIds = useRef<Set<string>>(new Set());
 
   const parseThemes = (raw: any): Themes => {
     if (!raw) return {};
@@ -59,12 +62,35 @@ export function useFirebaseSync(
     try { localStorage.setItem('planny-lastSync', String(t)); } catch {}
   };
 
+  // Push SRS data to subcollection — one doc per book index
+  const pushSRS = useCallback((store: ThemeMemoryStore, existingIds?: Set<string>) => {
+    const storeKeys = Object.keys(store);
+    const toDelete = existingIds
+      ? [...existingIds].filter(id => !store[Number(id)])
+      : [];
+    if (storeKeys.length === 0 && toDelete.length === 0) return;
+    const batch = writeBatch(db);
+    for (const bookIndex of storeKeys.map(Number)) {
+      const ref = doc(db, 'users', user!.uid, 'srsData', String(bookIndex));
+      batch.set(ref, store[bookIndex]);
+    }
+    for (const id of toDelete) {
+      const ref = doc(db, 'users', user!.uid, 'srsData', id);
+      batch.delete(ref);
+    }
+    batch.commit().catch(console.error);
+  }, [user]);
+
   const doPush = useCallback(() => {
     const now = Date.now();
     persistSyncTime(now);
+    const { themeMemoryStore, ...mainData } = dataRef.current;
     const ref = doc(db, 'users', user!.uid);
-    setDoc(ref, { ...dataRef.current, lastModified: now }, { merge: true }).catch(console.error);
-  }, [user]);
+    setDoc(ref, { ...mainData, lastModified: now }, { merge: true }).catch(console.error);
+    pushSRS(themeMemoryStore, remoteSRSIds.current);
+    // Update tracked remote IDs to match what we just pushed
+    remoteSRSIds.current = new Set(Object.keys(themeMemoryStore));
+  }, [user, pushSRS]);
 
   const uid = user?.uid ?? null;
 
@@ -74,7 +100,18 @@ export function useFirebaseSync(
     const pull = () => {
       readyToPush.current = false;
       const ref = doc(db, 'users', uid);
-      getDoc(ref).then(snap => {
+      // Pull main doc and SRS subcollection in parallel
+      Promise.all([
+        getDoc(ref),
+        getDocs(collection(db, 'users', uid, 'srsData')),
+      ]).then(([snap, srsDocs]) => {
+        // Assemble SRS store from subcollection docs
+        const srsStore: ThemeMemoryStore = {};
+        srsDocs.forEach(d => {
+          srsStore[Number(d.id)] = d.data() as ThemeMemoryStore[number];
+          remoteSRSIds.current.add(d.id);
+        });
+
         if (snap.exists()) {
           const remote = snap.data() as RemoteDoc;
           const remoteTime = remote.lastModified ?? 0;
@@ -119,6 +156,9 @@ export function useFirebaseSync(
             }
           }
         }
+        // Always apply SRS store if subcollection had data
+        if (srsDocs.size > 0) callbacks.setThemeMemoryStore(srsStore);
+
         readyToPush.current = true;
         if (pendingPushRef.current) {
           pendingPushRef.current = false;
@@ -151,7 +191,7 @@ export function useFirebaseSync(
       debounceRef.current = null;
     }, 1000);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [uid, data.iconGroups, data.activeGroupId, data.customTiles, data.memoryTiles, data.themes, data.completedChunks, data.daysCompleted, data.lastResetDate]);
+  }, [uid, data.iconGroups, data.activeGroupId, data.customTiles, data.memoryTiles, data.themes, data.completedChunks, data.daysCompleted, data.lastResetDate, data.themeMemoryStore]);
 
   useEffect(() => {
     const flush = () => {

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronDown, ChevronRight, ChevronLeft, ArrowLeft, Mic, MicOff } from 'lucide-react';
-import { TimeOfDay, Themes } from '../types';
+import { ChevronDown, ChevronRight, ChevronLeft, ArrowLeft, Mic, MicOff, BookOpenCheck } from 'lucide-react';
+import { TimeOfDay, Themes, ThemeMemoryStore } from '../types';
 import { BIBLE_BOOKS, getFilledStyle } from '../constants';
+import { memorizationPercent, isDue as isMemDue } from '../hooks/useThemeMemory';
 
 const MAX_CHARS = 300;
 
@@ -10,6 +11,9 @@ type Props = {
   timeOfDay: TimeOfDay;
   onChange: (bookIndex: number, chapter: number, value: string) => void;
   initialView?: View;
+  memoryStore?: ThemeMemoryStore;
+  onStudy?: (scope: number | 'OT' | 'NT') => void;
+  onResetMemory?: (bookIndex: number, chapter: number) => void;
 };
 
 type View =
@@ -22,7 +26,23 @@ const SpeechRecognition =
   (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 const hasVTT = !!SpeechRecognition;
 
-export default function ThemesTab({ themes, timeOfDay, onChange, initialView }: Props) {
+// Mature glow — gold ring shown when a chapter/book reaches mature status
+const MATURE_GLOW: Record<TimeOfDay, string> = {
+  morning:   '0 0 0 2px rgba(251,191,36,0.9), 0 0 12px 3px rgba(251,191,36,0.45)',
+  afternoon: '0 0 0 2px rgba(251,191,36,0.9), 0 0 12px 3px rgba(251,191,36,0.45)',
+  evening:   '0 0 0 2px rgba(251,191,36,0.9), 0 0 12px 3px rgba(251,191,36,0.45)',
+  night:     '0 0 0 2px rgba(251,191,36,1),   0 0 16px 4px rgba(251,191,36,0.6)',
+};
+
+// Raw fill colors matching getFilledStyle, used for inline gradient
+const FILL_COLORS: Record<TimeOfDay, string> = {
+  morning:   'rgba(252,211,77,0.55)',
+  afternoon: 'rgba(103,232,249,0.55)',
+  evening:   'rgba(251,113,133,0.55)',
+  night:     'rgba(251,191,36,0.35)',
+};
+
+export default function ThemesTab({ themes, timeOfDay, onChange, initialView, memoryStore, onStudy, onResetMemory }: Props) {
   const [view, setView] = useState<View>(initialView ?? { kind: 'list' });
   const [otOpen, setOtOpen] = useState(() => {
     try { return localStorage.getItem('themes-ot-open') === 'true'; } catch { return false; }
@@ -198,6 +218,17 @@ export default function ThemesTab({ themes, timeOfDay, onChange, initialView }: 
             {listening ? 'Stop recording' : 'Dictate'}
           </button>
         )}
+
+        {onResetMemory && memoryStore?.[view.bookIndex]?.[view.chapter] && (
+          <button
+            onClick={() => onResetMemory(view.bookIndex, view.chapter)}
+            className={`mt-2 text-xs px-3 py-1.5 rounded-lg transition-colors ${
+              isNight ? 'text-slate-500 hover:text-red-400 hover:bg-slate-800' : 'text-slate-400 hover:text-red-500 hover:bg-slate-100'
+            }`}
+          >
+            Reset memorization
+          </button>
+        )}
       </div>
     );
   }
@@ -219,23 +250,72 @@ export default function ThemesTab({ themes, timeOfDay, onChange, initialView }: 
         </div>
 
         <div className="grid grid-cols-4 gap-2">
-          {Array.from({ length: book.chapters }, (_, i) => i + 1).map(ch => (
+          {Array.from({ length: book.chapters }, (_, i) => i + 1).map(ch => {
+            const isFilled = chapterFilled(view.bookIndex, ch);
+            const mem = memoryStore?.[view.bookIndex]?.[ch];
+            const pct = memorizationPercent(mem);
+            const fillColor = FILL_COLORS[timeOfDay];
+            const isMature = mem?.status === 'mature';
+            const bgStyle = isFilled
+              ? {
+                  background: `linear-gradient(to top, ${fillColor} ${pct}%, transparent ${pct}%)`,
+                  ...(isMature ? { boxShadow: MATURE_GLOW[timeOfDay] } : {}),
+                }
+              : undefined;
+            const unfilled = isNight ? 'bg-slate-800/60 text-slate-400' : 'bg-white/60 text-slate-500';
+            return (
               <button
                 key={ch}
                 onClick={() => setView({ kind: 'editor', bookIndex: view.bookIndex, chapter: ch })}
-                className={`py-2 rounded-xl text-sm font-medium transition-colors
-                  ${chapterFilled(view.bookIndex, ch)
-                    ? `${filled.bg} ${filled.text}`
-                    : isNight ? 'bg-slate-800/60 text-slate-400' : 'bg-white/60 text-slate-500'}
-                `}
+                style={bgStyle}
+                className={`py-2 rounded-xl text-sm font-medium transition-colors ${isFilled ? filled.text : unfilled}`}
               >
                 {ch}
               </button>
-            ))}
+            );
+          })}
         </div>
       </div>
     );
   }
+
+  const dueCount = (bookIndex: number): number => {
+    const book = BIBLE_BOOKS[bookIndex];
+    let count = 0;
+    for (let ch = 1; ch <= book.chapters; ch++) {
+      if (!themes[bookIndex]?.[ch]) continue;
+      const mem = memoryStore?.[bookIndex]?.[ch];
+      if (mem?.status === 'leeched') continue;
+      if (!mem || isMemDue(mem.dueDate)) count++;
+    }
+    return count;
+  };
+
+  const hasDue = (bookIndex: number): boolean => dueCount(bookIndex) > 0;
+
+  const testamentDueCount = (testament: 'OT' | 'NT'): number =>
+    BIBLE_BOOKS.reduce((sum, b, i) => b.testament === testament ? sum + dueCount(i) : sum, 0);
+
+  const bookAllMature = (bookIndex: number): boolean => {
+    const book = BIBLE_BOOKS[bookIndex];
+    let hasAny = false;
+    for (let ch = 1; ch <= book.chapters; ch++) {
+      if (!themes[bookIndex]?.[ch]) continue;
+      hasAny = true;
+      if (memoryStore?.[bookIndex]?.[ch]?.status !== 'mature') return false;
+    }
+    return hasAny;
+  };
+
+  const bookMemoPct = (bookIndex: number): number => {
+    const populated: number[] = [];
+    for (let ch = 1; ch <= BIBLE_BOOKS[bookIndex].chapters; ch++) {
+      if (themes[bookIndex]?.[ch]) populated.push(ch);
+    }
+    if (populated.length === 0) return 0;
+    const sum = populated.reduce((acc, ch) => acc + memorizationPercent(memoryStore?.[bookIndex]?.[ch]), 0);
+    return Math.round(sum / populated.length);
+  };
 
   // --- Book list view ---
   const renderBooks = (books: typeof otBooks) => (
@@ -243,11 +323,21 @@ export default function ThemesTab({ themes, timeOfDay, onChange, initialView }: 
       {books.map(book => {
         const complete = bookComplete(book.i);
         const count = filledCount(book.i);
+        const pct = bookMemoPct(book.i);
+        const fillColor = FILL_COLORS[timeOfDay];
+        const allMature = bookAllMature(book.i);
+        const bgStyle = count > 0
+          ? {
+              background: `linear-gradient(to top, ${fillColor} ${pct}%, transparent ${pct}%)`,
+              ...(allMature ? { boxShadow: MATURE_GLOW[timeOfDay] } : {}),
+            }
+          : undefined;
         return (
           <button
             key={book.i}
             onClick={() => setView({ kind: 'chapters', bookIndex: book.i })}
-            className={`${rowBase} ${complete ? `${filled.bg}` : rowStyle}`}
+            style={bgStyle}
+            className={`${rowBase} ${count > 0 ? (isNight ? 'bg-slate-800/60' : 'bg-white/60') : rowStyle}`}
           >
             <div className="flex items-center gap-3">
               <div className={`w-2 h-2 rounded-full flex-shrink-0 ${complete ? filled.dot : isNight ? 'bg-slate-600' : 'bg-slate-300'}`} />
@@ -255,9 +345,20 @@ export default function ThemesTab({ themes, timeOfDay, onChange, initialView }: 
                 {book.name}
               </span>
             </div>
-            <span className={`text-xs ${count > 0 ? filled.text : isNight ? 'text-slate-500' : 'text-slate-400'}`}>
-              {count > 0 ? `${count}/${book.chapters}` : ''}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className={`text-xs ${count > 0 ? filled.text : isNight ? 'text-slate-500' : 'text-slate-400'}`}>
+                {count > 0 ? `${count}/${book.chapters}` : ''}
+              </span>
+              {count > 0 && hasDue(book.i) && onStudy && (
+                <button
+                  onClick={e => { e.stopPropagation(); onStudy(book.i); }}
+                  className={`flex items-center gap-1 p-1 rounded-lg transition-colors ${isNight ? 'hover:bg-slate-700 text-amber-400' : 'hover:bg-slate-100 text-amber-600'}`}
+                >
+                  <span className={`text-xs font-bold tabular-nums`}>{dueCount(book.i)}</span>
+                  <BookOpenCheck className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </button>
         );
       })}
@@ -276,25 +377,47 @@ export default function ThemesTab({ themes, timeOfDay, onChange, initialView }: 
 
       {/* OT section */}
       <div>
-        <button
-          onClick={() => { const v = !otOpen; setOtOpen(v); try { localStorage.setItem('themes-ot-open', String(v)); } catch {} }}
-          className={`flex items-center gap-2 mb-3 ${labelClass}`}
-        >
-          {otOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-          Old Testament
-        </button>
+        <div className="flex items-center gap-2 mb-3">
+          <button
+            onClick={() => { const v = !otOpen; setOtOpen(v); try { localStorage.setItem('themes-ot-open', String(v)); } catch {} }}
+            className={`flex items-center gap-2 ${labelClass}`}
+          >
+            {otOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+            Old Testament
+          </button>
+          {onStudy && testamentDueCount('OT') > 0 && (
+            <button
+              onClick={() => onStudy('OT')}
+              className={`flex items-center gap-1 p-1 rounded-lg transition-colors ${isNight ? 'hover:bg-slate-700 text-amber-400' : 'hover:bg-slate-100 text-amber-600'}`}
+            >
+              <span className="text-xs font-bold tabular-nums">{testamentDueCount('OT')}</span>
+              <BookOpenCheck className="w-4 h-4" />
+            </button>
+          )}
+        </div>
         {otOpen && renderBooks(otBooks)}
       </div>
 
       {/* NT section */}
       <div>
-        <button
-          onClick={() => { const v = !ntOpen; setNtOpen(v); try { localStorage.setItem('themes-nt-open', String(v)); } catch {} }}
-          className={`flex items-center gap-2 mb-3 ${labelClass}`}
-        >
-          {ntOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-          New Testament
-        </button>
+        <div className="flex items-center gap-2 mb-3">
+          <button
+            onClick={() => { const v = !ntOpen; setNtOpen(v); try { localStorage.setItem('themes-nt-open', String(v)); } catch {} }}
+            className={`flex items-center gap-2 ${labelClass}`}
+          >
+            {ntOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+            New Testament
+          </button>
+          {onStudy && testamentDueCount('NT') > 0 && (
+            <button
+              onClick={() => onStudy('NT')}
+              className={`flex items-center gap-1 p-1 rounded-lg transition-colors ${isNight ? 'hover:bg-slate-700 text-amber-400' : 'hover:bg-slate-100 text-amber-600'}`}
+            >
+              <span className="text-xs font-bold tabular-nums">{testamentDueCount('NT')}</span>
+              <BookOpenCheck className="w-4 h-4" />
+            </button>
+          )}
+        </div>
         {ntOpen && renderBooks(ntBooks)}
       </div>
     </div>

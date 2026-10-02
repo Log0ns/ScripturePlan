@@ -9,3 +9,4 @@ export { default as MemoryTileModal } from './MemoryTileModal';
 export { default as ThemesTab } from './ThemesTab';
 export { default as GroupSwitcher } from './GroupSwitcher';
 export { default as TileShell } from './TileShell';
+export { default as StudySession } from './StudySession';

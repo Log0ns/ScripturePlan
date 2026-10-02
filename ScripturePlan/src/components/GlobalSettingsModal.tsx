@@ -10,6 +10,7 @@ type Props = {
   onResetDayCounter: () => void;
   onClearMemoryProgress: () => void;
   onClearThemes: () => void;
+  onClearSRSProgress: () => void;
   openOnTap: boolean;
   onToggleOpenOnTap: () => void;
   themeOnTap: boolean;
@@ -19,8 +20,22 @@ type Props = {
 
 const selectClass = "w-full p-3 border border-slate-600 rounded-xl bg-slate-700 text-slate-100 focus:outline-none focus:border-amber-500";
 
-export default function GlobalSettingsModal({ user, onSignIn, onSignOut, onApplyPlan, onResetDayCounter, onClearMemoryProgress, onClearThemes, openOnTap, onToggleOpenOnTap, themeOnTap, onToggleThemeOnTap, onClose }: Props) {
+export default function GlobalSettingsModal({ user, onSignIn, onSignOut, onApplyPlan, onResetDayCounter, onClearMemoryProgress, onClearThemes, onClearSRSProgress, openOnTap, onToggleOpenOnTap, themeOnTap, onToggleThemeOnTap, onClose }: Props) {
   const [selectedPlan, setSelectedPlan] = useState('Default');
+  const [confirming, setConfirming] = useState<string | null>(null);
+
+  const confirmable = (key: string, action: () => void) => {
+    if (confirming === key) {
+      action();
+      setConfirming(null);
+    } else {
+      setConfirming(key);
+    }
+  };
+
+  const btnClass = "w-full p-3 rounded-xl font-medium transition-colors";
+  const normalBtn = `${btnClass} bg-slate-700 text-slate-200 hover:bg-slate-600`;
+  const confirmBtn = `${btnClass} bg-red-600/80 text-white hover:bg-red-500`;
 
   return (
     <div className="fixed inset-0 z-50 animate-fade-in">
@@ -133,23 +148,37 @@ export default function GlobalSettingsModal({ user, onSignIn, onSignOut, onApply
         <div>
           <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3 block">Reset</label>
           <button
-            onClick={onResetDayCounter}
-            className="w-full p-3 bg-slate-700 text-slate-200 rounded-xl font-medium hover:bg-slate-600 transition-colors"
+            onClick={() => confirmable('days', onResetDayCounter)}
+            className={confirming === 'days' ? confirmBtn : normalBtn}
           >
-            Reset Chapter Counter
+            {confirming === 'days' ? 'Tap again to confirm' : 'Reset Chapter Counter'}
           </button>
           <button
-            onClick={onClearMemoryProgress}
-            className="mt-3 w-full p-3 bg-slate-700 text-slate-200 rounded-xl font-medium hover:bg-slate-600 transition-colors"
+            onClick={() => confirmable('mem', onClearMemoryProgress)}
+            className={`mt-3 ${confirming === 'mem' ? confirmBtn : normalBtn}`}
           >
-            Clear Memorization Progress
+            {confirming === 'mem' ? 'Tap again to confirm' : 'Clear Memorization Progress'}
           </button>
           <button
-            onClick={onClearThemes}
-            className="mt-3 w-full p-3 bg-slate-700 text-slate-200 rounded-xl font-medium hover:bg-slate-600 transition-colors"
+            onClick={() => confirmable('themes', onClearThemes)}
+            className={`mt-3 ${confirming === 'themes' ? confirmBtn : normalBtn}`}
           >
-            Clear Saved Themes
+            {confirming === 'themes' ? 'Tap again to confirm' : 'Clear Saved Themes'}
           </button>
+          <button
+            onClick={() => confirmable('srs', onClearSRSProgress)}
+            className={`mt-3 ${confirming === 'srs' ? confirmBtn : normalBtn}`}
+          >
+            {confirming === 'srs' ? 'Tap again to confirm' : 'Clear Theme Memorization Progress'}
+          </button>
+          {confirming && (
+            <button
+              onClick={() => setConfirming(null)}
+              className="mt-2 w-full text-xs text-slate-500 hover:text-slate-300 py-1"
+            >
+              Cancel
+            </button>
+          )}
         </div>
       </div>
       </div>

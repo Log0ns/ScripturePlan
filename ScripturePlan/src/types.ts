@@ -44,3 +44,17 @@ export type CompletedChunks = number[];
 
 // themes[bookIndex][chapter] = theme string (max 300 chars)
 export type Themes = Record<number, Record<number, string>>;
+
+export type SRSStatus = 'new' | 'learning' | 'review' | 'mature' | 'leeched';
+
+export type ThemeMemory = {
+  interval: number;      // days until next review
+  easeFactor: number;    // multiplier for interval growth (starts at 2.5)
+  dueDate: string;       // ISO date string (YYYY-MM-DD) or ISO datetime for intra-day steps
+  repetitions: number;   // consecutive correct reviews
+  lapses: number;        // total times card has been failed
+  status: SRSStatus;
+};
+
+// themeMemory[bookIndex][chapter] = ThemeMemory
+export type ThemeMemoryStore = Record<number, Record<number, ThemeMemory>>;
