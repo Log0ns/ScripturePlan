@@ -25,41 +25,26 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
   const [queue, setQueue] = useState<Card[]>(initialCards);
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
-  // Track which card ids have been passed on first attempt
-  const [passedIds] = useState(() => new Set<string>());
-  const [failedIds] = useState(() => new Set<string>());
-  // cardId -> dueDate, updated on every grade so we always have the latest per card
-  const [dueDateMap] = useState<Record<string, string>>(() => ({}));
-  const [done, setDone] = useState(false);
   // Snapshot themes at session start so stale prop mid-session doesn't affect card display
   const [themes] = useState(initialThemes);
 
   const isNight = timeOfDay === 'night';
   const card = queue[index];
 
-  // Guard against empty queue (shouldn't happen but prevents crash)
-  if (!card && !done) return null;
+  if (!card) return null;
 
   const handleGrade = (grade: 1 | 2 | 3 | 4 | 5) => {
-    const cardId = `${card.bookIndex}-${card.chapter}`;
     const updated = reviewCard(card.memory, grade);
     onUpdateMemory(card.bookIndex, card.chapter, updated);
 
     const passed = grade >= 3;
-    // Only record first-attempt outcome per unique card
-    if (!passedIds.has(cardId) && !failedIds.has(cardId)) {
-      if (passed) passedIds.add(cardId);
-      else failedIds.add(cardId);
-    }
-    // Track latest due date per card id
-    dueDateMap[cardId] = updated.dueDate;
 
     const next = !passed
       ? [...queue.slice(index + 1), { ...card, memory: updated }]
       : queue.slice(index + 1);
 
     if (next.length === 0) {
-      setDone(true);
+      onClose();
     } else {
       setQueue(next);
       setIndex(0);
@@ -75,47 +60,6 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
     ? 'bg-slate-800 border border-slate-700'
     : 'bg-white border border-slate-200';
 
-  if (done) {
-    const total = initialCards.length;
-    const correct = passedIds.size;
-    const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
-    const dates = Object.values(dueDateMap);
-    const nextDue = dates.length > 0 ? dates.reduce((a, b) => a < b ? a : b) : null;
-    const nextDueLabel = nextDue
-      ? new Date(nextDue.length === 10 ? nextDue + 'T00:00:00' : nextDue).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-      : null;
-
-    return (
-      <div className={`fixed inset-0 z-50 flex flex-col items-center justify-center px-6 ${panelClass}`}>
-        <div className="text-4xl mb-4">✓</div>
-        <div className={`text-lg font-semibold mb-4 ${isNight ? 'text-slate-100' : 'text-slate-800'}`}>
-          Session complete
-        </div>
-        <div className={`w-full max-w-xs rounded-2xl p-5 space-y-3 ${isNight ? 'bg-slate-800' : 'bg-slate-100'}`}>
-          <div className="flex justify-between text-sm">
-            <span className={isNight ? 'text-slate-400' : 'text-slate-500'}>Cards reviewed</span>
-            <span className={`font-semibold ${isNight ? 'text-slate-200' : 'text-slate-700'}`}>{total}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className={isNight ? 'text-slate-400' : 'text-slate-500'}>Correct</span>
-            <span className={`font-semibold ${pct >= 80 ? 'text-emerald-400' : pct >= 50 ? 'text-amber-400' : 'text-red-400'}`}>{pct}%</span>
-          </div>
-          {nextDueLabel && (
-            <div className="flex justify-between text-sm">
-              <span className={isNight ? 'text-slate-400' : 'text-slate-500'}>Next review</span>
-              <span className={`font-semibold ${isNight ? 'text-slate-200' : 'text-slate-700'}`}>{nextDueLabel}</span>
-            </div>
-          )}
-        </div>
-        <button
-          onClick={onClose}
-          className={`mt-8 px-6 py-2 rounded-xl text-sm font-medium ${isNight ? 'bg-slate-700 text-slate-200' : 'bg-slate-100 text-slate-700'}`}
-        >
-          Done
-        </button>
-      </div>
-    );
-  }
 
   const bookName = BIBLE_BOOKS[card.bookIndex].name;
   const theme = themes[card.bookIndex]?.[card.chapter] ?? '';

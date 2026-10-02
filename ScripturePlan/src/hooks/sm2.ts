@@ -101,12 +101,12 @@ export function reviewCard(memory: ThemeMemory, grade: 1 | 2 | 3 | 4 | 5): Theme
 
   if (grade === 2) {
     // Hard — stay in review but reduce interval, don't reset
-    interval = Math.max(1, Math.round(interval * 0.8));
+    interval = Math.max(1, Math.round((repetitions <= 1 ? 2 : interval) * 0.8));
     easeFactor = Math.max(MIN_EASE, easeFactor - 0.15);
   } else {
     // Good (3) / Easy (4 or 5)
     if (repetitions <= 1) {
-      interval = grade >= 4 ? 4 : 1;
+      interval = grade >= 4 ? 4 : 2;
     } else {
       interval = Math.min(MAX_INTERVAL, Math.round(interval * easeFactor));
     }
