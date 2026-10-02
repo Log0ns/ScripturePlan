@@ -103,11 +103,7 @@ export function useThemeMemory() {
         }
       }
 
-      return results.sort((a, b) => {
-        if (a.memory.status === 'new' && b.memory.status !== 'new') return -1;
-        if (b.memory.status === 'new' && a.memory.status !== 'new') return 1;
-        return a.memory.dueDate.localeCompare(b.memory.dueDate);
-      });
+      return results.sort((a, b) => a.memory.dueDate.localeCompare(b.memory.dueDate));
     },
     [store]
   );

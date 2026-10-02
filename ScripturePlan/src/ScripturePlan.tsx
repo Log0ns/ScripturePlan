@@ -579,11 +579,7 @@ export default function Planny() {
           ? getDueCards(studyBookIndex, themes)
           : BIBLE_BOOKS.flatMap((b, i) =>
               b.testament === studyBookIndex ? getDueCards(i, themes) : []
-            ).sort((a, b) => {
-              if (a.memory.status === 'new' && b.memory.status !== 'new') return -1;
-              if (b.memory.status === 'new' && a.memory.status !== 'new') return 1;
-              return a.memory.dueDate.localeCompare(b.memory.dueDate);
-            });
+            ).sort((a, b) => a.memory.dueDate.localeCompare(b.memory.dueDate));
         const cards = allDue;
         return (
           <StudySession
