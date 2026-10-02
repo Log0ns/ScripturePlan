@@ -1,5 +1,5 @@
 import type { ThemeMemory } from '../types';
-import { MATURE_INTERVAL, MAX_INTERVAL, LEECH_THRESHOLD, LEARNING_STEPS } from './srsConstants';
+import { MATURE_INTERVAL, MAX_INTERVAL, LEARNING_STEPS } from './srsConstants';
 
 const MIN_EASE = 1.3;
 
@@ -47,14 +47,13 @@ export function reviewCard(memory: ThemeMemory, grade: 1 | 2 | 3 | 4 | 5): Theme
     if (grade === 1) {
       // Failed — restart learning steps from beginning
       lapses += 1;
-      const status = lapses >= LEECH_THRESHOLD ? 'leeched' : 'learning';
       return {
-        interval: 0, // back to step 0
+        interval: 0,
         easeFactor,
         dueDate: addMinutes(LEARNING_STEPS[0]),
         repetitions: 0,
         lapses,
-        status,
+        status: 'learning',
       };
     }
 
@@ -90,14 +89,13 @@ export function reviewCard(memory: ThemeMemory, grade: 1 | 2 | 3 | 4 | 5): Theme
   if (grade === 1) {
     // Failed — send back to learning steps (relearning)
     lapses += 1;
-    const status = lapses >= LEECH_THRESHOLD ? 'leeched' : 'learning';
     return {
       interval: 0,
       easeFactor: Math.max(MIN_EASE, easeFactor - 0.2),
       dueDate: addMinutes(LEARNING_STEPS[0]),
       repetitions: 0,
       lapses,
-      status,
+      status: 'learning',
     };
   }
 
@@ -119,12 +117,7 @@ export function reviewCard(memory: ThemeMemory, grade: 1 | 2 | 3 | 4 | 5): Theme
     );
   }
 
-  const status =
-    lapses >= LEECH_THRESHOLD
-      ? 'leeched'
-      : interval >= MATURE_INTERVAL
-      ? 'mature'
-      : 'review';
+  const status = interval >= MATURE_INTERVAL ? 'mature' : 'review';
 
   return {
     interval,

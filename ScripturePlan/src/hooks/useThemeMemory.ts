@@ -33,8 +33,24 @@ function isDue(dueDate: string): boolean {
   return dueDate <= new Date().toISOString();
 }
 
+export function nextDueLabel(memory: ThemeMemory | undefined): string | null {
+  if (!memory || memory.status === 'new') return null;
+  const due = memory.dueDate.length === 10
+    ? new Date(memory.dueDate + 'T00:00:00')
+    : new Date(memory.dueDate);
+  const now = new Date();
+  const diffMs = due.getTime() - now.getTime();
+  if (diffMs <= 0) return 'due';
+  const diffMins = Math.round(diffMs / 60000);
+  if (diffMins < 60) return `${diffMins}m`;
+  const diffHours = Math.round(diffMs / 3600000);
+  if (diffHours < 24) return `${diffHours}h`;
+  const diffDays = Math.round(diffMs / 86400000);
+  return `${diffDays}d`;
+}
+
 export function memorizationPercent(memory: ThemeMemory | undefined): number {
-  if (!memory || memory.status === 'new' || memory.status === 'leeched') return 0;
+  if (!memory || memory.status === 'new') return 0;
   return Math.min(100, Math.max(0, Math.round((memory.interval / MATURE_INTERVAL) * 100)));
 }
 
@@ -72,7 +88,7 @@ export function useThemeMemory() {
         if (chapters) {
           for (const c of Object.keys(chapters).map(Number)) {
             const mem = chapters[c];
-            if (mem.status !== 'leeched' && isDue(mem.dueDate)) {
+            if (isDue(mem.dueDate)) {
               results.push({ bookIndex: b, chapter: c, memory: mem });
             }
           }

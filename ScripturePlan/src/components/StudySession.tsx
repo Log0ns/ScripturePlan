@@ -145,9 +145,6 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
           <div className={`text-lg ${isNight ? 'text-slate-400' : 'text-slate-500'}`}>
             Chapter {card.chapter}
           </div>
-          {card.memory.status === 'leeched' && (
-            <div className="mt-2 text-xs text-red-400 font-medium">⚠ leech</div>
-          )}
 
           {flipped ? (
             <div className={`mt-6 pt-6 border-t text-sm leading-relaxed ${isNight ? 'border-slate-700 text-slate-200' : 'border-slate-200 text-slate-700'}`}>

@@ -45,7 +45,7 @@ export type CompletedChunks = number[];
 // themes[bookIndex][chapter] = theme string (max 300 chars)
 export type Themes = Record<number, Record<number, string>>;
 
-export type SRSStatus = 'new' | 'learning' | 'review' | 'mature' | 'leeched';
+export type SRSStatus = 'new' | 'learning' | 'review' | 'mature';
 
 export type ThemeMemory = {
   interval: number;      // days until next review

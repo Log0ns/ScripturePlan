@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDown, ChevronRight, ChevronLeft, ArrowLeft, Mic, MicOff, BookOpenCheck } from 'lucide-react';
 import { TimeOfDay, Themes, ThemeMemoryStore } from '../types';
 import { BIBLE_BOOKS, getFilledStyle } from '../constants';
-import { memorizationPercent, isDue as isMemDue } from '../hooks/useThemeMemory';
+import { memorizationPercent, isDue as isMemDue, nextDueLabel } from '../hooks/useThemeMemory';
 
 const MAX_CHARS = 300;
 
@@ -262,13 +262,18 @@ export default function ThemesTab({ themes, timeOfDay, onChange, initialView, me
             const isFilled = chapterFilled(view.bookIndex, ch);
             const mem = memoryStore?.[view.bookIndex]?.[ch];
             const pct = memorizationPercent(mem);
+            const label = nextDueLabel(mem);
             const base = BASE_COLORS[timeOfDay];
             const fillColor = FILL_COLORS[timeOfDay];
             const isMature = mem?.status === 'mature';
+            const isOverdue = label === 'due';
             const bgStyle = isFilled
               ? {
-                  background: `linear-gradient(to top, ${fillColor} ${pct}%, ${base} ${pct}%)`,
+                  background: isOverdue
+                    ? `linear-gradient(to top, ${fillColor} ${pct}%, rgba(239,68,68,0.18) ${pct}%)`
+                    : `linear-gradient(to top, ${fillColor} ${pct}%, ${base} ${pct}%)`,
                   ...(isMature ? { boxShadow: MATURE_GLOW[timeOfDay] } : {}),
+                  ...(isOverdue && !isMature ? { boxShadow: '0 0 0 2px rgba(239,68,68,0.6)' } : {}),
                 }
               : undefined;
             const unfilled = isNight ? 'bg-slate-800/60 text-slate-400' : 'bg-white/60 text-slate-500';
@@ -277,9 +282,10 @@ export default function ThemesTab({ themes, timeOfDay, onChange, initialView, me
                 key={ch}
                 onClick={() => setView({ kind: 'editor', bookIndex: view.bookIndex, chapter: ch })}
                 style={bgStyle}
-                className={`py-2 rounded-xl text-sm font-medium transition-colors ${isFilled ? filled.text : unfilled}`}
+                className={`py-2 rounded-xl text-sm font-medium transition-colors flex flex-col items-center justify-center gap-0.5 ${isFilled ? filled.text : unfilled}`}
               >
-                {ch}
+                <span>{ch}</span>
+                {label && <span className={`text-[10px] leading-none ${isOverdue ? 'text-red-400' : 'opacity-70'}`}>{label}</span>}
               </button>
             );
           })}
@@ -294,7 +300,6 @@ export default function ThemesTab({ themes, timeOfDay, onChange, initialView, me
     for (let ch = 1; ch <= book.chapters; ch++) {
       if (!themes[bookIndex]?.[ch]) continue;
       const mem = memoryStore?.[bookIndex]?.[ch];
-      if (mem?.status === 'leeched') continue;
       if (!mem || isMemDue(mem.dueDate)) count++;
     }
     return count;
