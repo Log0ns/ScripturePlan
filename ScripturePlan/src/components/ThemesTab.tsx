@@ -34,12 +34,20 @@ const MATURE_GLOW: Record<TimeOfDay, string> = {
   night:     '0 0 0 2px rgba(251,191,36,1),   0 0 16px 4px rgba(251,191,36,0.6)',
 };
 
-// Raw fill colors matching getFilledStyle, used for inline gradient
+// Base color shown on any tile with theme content (soft)
+const BASE_COLORS: Record<TimeOfDay, string> = {
+  morning:   'rgba(252,211,77,0.18)',
+  afternoon: 'rgba(103,232,249,0.18)',
+  evening:   'rgba(251,113,133,0.18)',
+  night:     'rgba(251,191,36,0.12)',
+};
+
+// Stronger fill color representing SRS progress
 const FILL_COLORS: Record<TimeOfDay, string> = {
-  morning:   'rgba(252,211,77,0.55)',
-  afternoon: 'rgba(103,232,249,0.55)',
-  evening:   'rgba(251,113,133,0.55)',
-  night:     'rgba(251,191,36,0.35)',
+  morning:   'rgba(252,211,77,0.65)',
+  afternoon: 'rgba(103,232,249,0.65)',
+  evening:   'rgba(251,113,133,0.65)',
+  night:     'rgba(251,191,36,0.45)',
 };
 
 export default function ThemesTab({ themes, timeOfDay, onChange, initialView, memoryStore, onStudy, onResetMemory }: Props) {
@@ -254,11 +262,12 @@ export default function ThemesTab({ themes, timeOfDay, onChange, initialView, me
             const isFilled = chapterFilled(view.bookIndex, ch);
             const mem = memoryStore?.[view.bookIndex]?.[ch];
             const pct = memorizationPercent(mem);
+            const base = BASE_COLORS[timeOfDay];
             const fillColor = FILL_COLORS[timeOfDay];
             const isMature = mem?.status === 'mature';
             const bgStyle = isFilled
               ? {
-                  background: `linear-gradient(to top, ${fillColor} ${pct}%, transparent ${pct}%)`,
+                  background: `linear-gradient(to top, ${fillColor} ${pct}%, ${base} ${pct}%)`,
                   ...(isMature ? { boxShadow: MATURE_GLOW[timeOfDay] } : {}),
                 }
               : undefined;
@@ -324,11 +333,12 @@ export default function ThemesTab({ themes, timeOfDay, onChange, initialView, me
         const complete = bookComplete(book.i);
         const count = filledCount(book.i);
         const pct = bookMemoPct(book.i);
+        const base = BASE_COLORS[timeOfDay];
         const fillColor = FILL_COLORS[timeOfDay];
         const allMature = bookAllMature(book.i);
         const bgStyle = count > 0
           ? {
-              background: `linear-gradient(to top, ${fillColor} ${pct}%, transparent ${pct}%)`,
+              background: `linear-gradient(to top, ${fillColor} ${pct}%, ${base} ${pct}%)`,
               ...(allMature ? { boxShadow: MATURE_GLOW[timeOfDay] } : {}),
             }
           : undefined;
