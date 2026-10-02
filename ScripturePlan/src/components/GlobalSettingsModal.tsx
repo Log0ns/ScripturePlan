@@ -11,6 +11,7 @@ type Props = {
   onClearMemoryProgress: () => void;
   onClearThemes: () => void;
   onClearSRSProgress: () => void;
+  onExportThemes: () => void;
   openOnTap: boolean;
   onToggleOpenOnTap: () => void;
   themeOnTap: boolean;
@@ -20,7 +21,7 @@ type Props = {
 
 const selectClass = "w-full p-3 border border-slate-600 rounded-xl bg-slate-700 text-slate-100 focus:outline-none focus:border-amber-500";
 
-export default function GlobalSettingsModal({ user, onSignIn, onSignOut, onApplyPlan, onResetDayCounter, onClearMemoryProgress, onClearThemes, onClearSRSProgress, openOnTap, onToggleOpenOnTap, themeOnTap, onToggleThemeOnTap, onClose }: Props) {
+export default function GlobalSettingsModal({ user, onSignIn, onSignOut, onApplyPlan, onResetDayCounter, onClearMemoryProgress, onClearThemes, onClearSRSProgress, onExportThemes, openOnTap, onToggleOpenOnTap, themeOnTap, onToggleThemeOnTap, onClose }: Props) {
   const [selectedPlan, setSelectedPlan] = useState('Default');
   const [confirming, setConfirming] = useState<string | null>(null);
 
@@ -139,6 +140,15 @@ export default function GlobalSettingsModal({ user, onSignIn, onSignOut, onApply
               Sign in with Google
             </button>
           )}
+        </div>
+
+        {/* Divider */}
+        <div className="h-px bg-slate-700 my-6" />
+
+        {/* Export */}
+        <div className="mb-6">
+          <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3 block">Export</label>
+          <button onClick={onExportThemes} className={normalBtn}>Export Themes to Markdown</button>
         </div>
 
         {/* Divider */}

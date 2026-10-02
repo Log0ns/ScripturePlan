@@ -335,6 +335,29 @@ export default function Planny() {
   };
 
 
+  const exportThemes = () => {
+    const lines: string[] = ['# Bible Chapter Themes', ''];
+    for (let bi = 0; bi < BIBLE_BOOKS.length; bi++) {
+      const book = BIBLE_BOOKS[bi];
+      const bookThemes = themes[bi];
+      if (!bookThemes) continue;
+      const entries = Array.from({ length: book.chapters }, (_, i) => i + 1)
+        .filter(ch => bookThemes[ch]?.trim());
+      if (entries.length === 0) continue;
+      lines.push(`# ${book.name}`, '');
+      for (const ch of entries) {
+        lines.push(`## Chapter ${ch}`, '', bookThemes[ch].trim(), '');
+      }
+    }
+    const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'bible-themes.md';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const addButtonStyle = `aspect-square rounded-2xl shadow-md flex items-center justify-center cursor-pointer
     active:scale-95 transition-all border-2 border-dashed
     ${isNight ? 'bg-slate-800/50 border-slate-600/50' : 'bg-white/50 border-slate-300/50'}`;
@@ -481,6 +504,7 @@ export default function Planny() {
           onResetDayCounter={() => setDaysCompleted(0)}
           onClearMemoryProgress={() => setCompletedChunks([])}
           onClearSRSProgress={clearMemory}
+          onExportThemes={exportThemes}
           onClearThemes={() => {
             if (themeDebounceRef.current) { clearTimeout(themeDebounceRef.current); themeDebounceRef.current = null; }
             pendingThemeRef.current = null;
