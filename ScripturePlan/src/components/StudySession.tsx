@@ -40,7 +40,11 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
     const passed = grade >= 3;
 
     const next = !passed
-      ? [...queue.slice(index + 1), { ...card, memory: updated }]
+      ? (() => {
+          const remaining = [...queue.slice(index + 1), { ...card, memory: updated }];
+          remaining.sort((a, b) => a.memory.dueDate.localeCompare(b.memory.dueDate));
+          return remaining;
+        })()
       : queue.slice(index + 1);
 
     if (next.length === 0) {
