@@ -16,12 +16,14 @@ type Props = {
   onToggleOpenOnTap: () => void;
   themeOnTap: boolean;
   onToggleThemeOnTap: () => void;
+  studyInOrder: boolean;
+  onToggleStudyInOrder: () => void;
   onClose: () => void;
 };
 
 const selectClass = "w-full p-3 border border-slate-600 rounded-xl bg-slate-700 text-slate-100 focus:outline-none focus:border-amber-500";
 
-export default function GlobalSettingsModal({ user, onSignIn, onSignOut, onApplyPlan, onResetDayCounter, onClearMemoryProgress, onClearThemes, onClearSRSProgress, onExportThemes, openOnTap, onToggleOpenOnTap, themeOnTap, onToggleThemeOnTap, onClose }: Props) {
+export default function GlobalSettingsModal({ user, onSignIn, onSignOut, onApplyPlan, onResetDayCounter, onClearMemoryProgress, onClearThemes, onClearSRSProgress, onExportThemes, openOnTap, onToggleOpenOnTap, themeOnTap, onToggleThemeOnTap, studyInOrder, onToggleStudyInOrder, onClose }: Props) {
   const [selectedPlan, setSelectedPlan] = useState('Default');
   const [confirming, setConfirming] = useState<string | null>(null);
 
@@ -113,13 +115,17 @@ export default function GlobalSettingsModal({ user, onSignIn, onSignOut, onApply
               onChange={onToggleThemeOnTap}
             />
             <label htmlFor="themeOnTap" className="text-sm text-slate-300">Open chapter theme after marking read</label>
+          <div className="flex items-center mt-3">
+            <input
+              type="checkbox"
+              id="studyInOrder"
+              className="mr-2 h-4 w-4 accent-amber-500"
+              checked={studyInOrder}
+              onChange={onToggleStudyInOrder}
+            />
+            <label htmlFor="studyInOrder" className="text-sm text-slate-300">Study chapters in order within each book</label>
           </div>
         </div>
-
-        {/* Divider */}
-        <div className="h-px bg-slate-700 my-6" />
-
-        {/* Account */}
         <div className="mb-6">
           <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3 block">Account</label>
           {user ? (

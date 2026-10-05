@@ -42,6 +42,7 @@ export default function Planny() {
   const [lastResetDate, setLastResetDate] = useLocalStorage<string>('lastResetDate', '');
   const [openOnTap, setOpenOnTap] = useLocalStorage<boolean>('openOnTap', false);
   const [themeOnTap, setThemeOnTap] = useLocalStorage<boolean>('themeOnTap', false);
+  const [studyInOrder, setStudyInOrder] = useLocalStorage<boolean>('studyInOrder', false);
 
   const { user, loading, signIn, logOut } = useAuth();
 
@@ -514,6 +515,8 @@ export default function Planny() {
           onToggleOpenOnTap={() => setOpenOnTap(v => !v)}
           themeOnTap={themeOnTap}
           onToggleThemeOnTap={() => setThemeOnTap(v => !v)}
+          studyInOrder={studyInOrder}
+          onToggleStudyInOrder={() => setStudyInOrder(v => !v)}
           onClose={() => setShowGlobalSettings(false)}
         />
       )}
@@ -579,8 +582,25 @@ export default function Planny() {
           ? getDueCards(studyBookIndex, themes)
           : BIBLE_BOOKS.flatMap((b, i) =>
               b.testament === studyBookIndex ? getDueCards(i, themes) : []
-            ).sort((a, b) => a.memory.dueDate.localeCompare(b.memory.dueDate));
-        const cards = allDue;
+            ).sort((a, b) => {
+              if (a.memory.status === 'new' && b.memory.status !== 'new') return 1;
+              if (b.memory.status === 'new' && a.memory.status !== 'new') return -1;
+              if (a.memory.status === 'new' && b.memory.status === 'new') {
+                if (a.bookIndex !== b.bookIndex) return a.bookIndex - b.bookIndex;
+                return a.chapter - b.chapter;
+              }
+              return a.memory.dueDate.localeCompare(b.memory.dueDate);
+            });
+        const cards = studyInOrder
+          ? allDue.slice().sort((a, b) => {
+              if (a.bookIndex !== b.bookIndex) {
+                if (a.memory.status === 'new' && b.memory.status !== 'new') return 1;
+                if (b.memory.status === 'new' && a.memory.status !== 'new') return -1;
+                return a.memory.dueDate.localeCompare(b.memory.dueDate);
+              }
+              return a.chapter - b.chapter;
+            })
+          : allDue;
         return (
           <StudySession
             cards={cards}
