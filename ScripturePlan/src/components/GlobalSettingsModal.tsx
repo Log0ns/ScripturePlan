@@ -115,6 +115,7 @@ export default function GlobalSettingsModal({ user, onSignIn, onSignOut, onApply
               onChange={onToggleThemeOnTap}
             />
             <label htmlFor="themeOnTap" className="text-sm text-slate-300">Open chapter theme after marking read</label>
+          </div>
           <div className="flex items-center mt-3">
             <input
               type="checkbox"
