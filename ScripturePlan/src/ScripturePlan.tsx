@@ -593,11 +593,9 @@ export default function Planny() {
             });
         const cards = studyInOrder
           ? allDue.slice().sort((a, b) => {
-              if (a.bookIndex !== b.bookIndex) {
-                if (a.memory.status === 'new' && b.memory.status !== 'new') return 1;
-                if (b.memory.status === 'new' && a.memory.status !== 'new') return -1;
-                return a.memory.dueDate.localeCompare(b.memory.dueDate);
-              }
+              if (a.memory.status === 'new' && b.memory.status !== 'new') return 1;
+              if (b.memory.status === 'new' && a.memory.status !== 'new') return -1;
+              if (a.bookIndex !== b.bookIndex) return a.memory.dueDate.localeCompare(b.memory.dueDate);
               return a.chapter - b.chapter;
             })
           : allDue;

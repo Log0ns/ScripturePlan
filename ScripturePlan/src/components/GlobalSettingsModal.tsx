@@ -124,7 +124,7 @@ export default function GlobalSettingsModal({ user, onSignIn, onSignOut, onApply
               checked={studyInOrder}
               onChange={onToggleStudyInOrder}
             />
-            <label htmlFor="studyInOrder" className="text-sm text-slate-300">Study chapters in order within each book</label>
+            <label htmlFor="studyInOrder" className="text-sm text-slate-300">Study chapter themes in order within each book</label>
           </div>
         </div>
         <div className="mb-6">
