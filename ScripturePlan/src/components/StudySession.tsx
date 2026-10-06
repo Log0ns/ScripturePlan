@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { TimeOfDay, ThemeMemory } from '../types';
 import { BIBLE_BOOKS } from '../constants';
@@ -22,14 +22,26 @@ const GRADES: { label: string; grade: 1 | 2 | 3 | 4 | 5; color: string }[] = [
 ];
 
 export default function StudySession({ cards: initialCards, themes: initialThemes, timeOfDay, onUpdateMemory, onClose }: Props) {
-  const [queue, setQueue] = useState<Card[]>(initialCards);
-  const [index, setIndex] = useState(0);
+  const [queue, setQueue] = useState<Card[]>([]);
   const [flipped, setFlipped] = useState(false);
-  // Snapshot themes at session start so stale prop mid-session doesn't affect card display
   const [themes] = useState(initialThemes);
+  const initialized = useRef(false);
+
+  useEffect(() => {
+    if (!initialized.current && initialCards.length > 0) {
+      initialized.current = true;
+      setQueue(initialCards);
+    }
+  }, [initialCards]);
+
+  const previewInterval = (memory: ThemeMemory, grade: 1 | 2 | 3 | 4 | 5): string => {
+    const { interval } = reviewCard(memory, grade);
+    if (interval < 1) return `${Math.round(interval * 24 * 60)}m`;
+    return `${Math.round(interval)}d`;
+  };
 
   const isNight = timeOfDay === 'night';
-  const card = queue[index];
+  const card = queue[0];
 
   if (!card) return null;
 
@@ -40,18 +52,13 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
     const passed = grade >= 3;
 
     const next = !passed
-      ? (() => {
-          const remaining = [...queue.slice(index + 1), { ...card, memory: updated }];
-          remaining.sort((a, b) => a.memory.dueDate.localeCompare(b.memory.dueDate));
-          return remaining;
-        })()
-      : queue.slice(index + 1);
+      ? [...queue.slice(1), { ...card, memory: updated }]
+      : queue.slice(1);
 
     if (next.length === 0) {
       onClose();
     } else {
       setQueue(next);
-      setIndex(0);
       setFlipped(false);
     }
   };
@@ -67,7 +74,7 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
 
   const bookName = BIBLE_BOOKS[card.bookIndex].name;
   const theme = themes[card.bookIndex]?.[card.chapter] ?? '';
-  const remaining = queue.length - index;
+  const remaining = queue.length;
 
   return (
     <div className={`fixed inset-0 z-50 flex flex-col px-6 pb-8 ${panelClass}`} style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>

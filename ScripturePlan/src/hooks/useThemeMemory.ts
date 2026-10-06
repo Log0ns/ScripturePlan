@@ -103,18 +103,9 @@ export function useThemeMemory() {
         }
       }
 
-      return results.sort((a, b) => {
-        if (a.memory.status === 'new' && b.memory.status !== 'new') return 1;
-        if (b.memory.status === 'new' && a.memory.status !== 'new') return -1;
-        if (a.memory.status === 'new' && b.memory.status === 'new') {
-          if (a.bookIndex !== b.bookIndex) return a.bookIndex - b.bookIndex;
-          return a.chapter - b.chapter;
-        }
-        const dateCmp = a.memory.dueDate.localeCompare(b.memory.dueDate);
-        if (dateCmp !== 0) return dateCmp;
-        if (a.bookIndex !== b.bookIndex) return a.bookIndex - b.bookIndex;
-        return a.chapter - b.chapter;
-      });
+      return results.sort((a, b) =>
+        a.bookIndex !== b.bookIndex ? a.bookIndex - b.bookIndex : a.chapter - b.chapter
+      );
     },
     [store]
   );
