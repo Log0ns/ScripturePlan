@@ -54,13 +54,18 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
 
     const passed = grade >= 3;
 
-    const remaining = queue.slice(1);
-    const next = passed ? remaining : [...remaining, { ...card, memory: updated }];
+    const rest = queue.slice(1);
+    const failedCard = passed ? null : { ...card, memory: updated };
+    const next: Card[] = failedCard ? [...rest, failedCard] : rest;
 
     const now = new Date().toISOString();
-    const isDue = (c: Card) => c.memory.status === 'learning' && c.memory.dueDate <= now;
     next.sort((a, b) => {
-      const aDue = isDue(a), bDue = isDue(b);
+      const aFailed = a === failedCard;
+      const bFailed = b === failedCard;
+      if (aFailed) return 1;
+      if (bFailed) return -1;
+      const aDue = a.memory.dueDate <= now;
+      const bDue = b.memory.dueDate <= now;
       if (aDue && !bDue) return -1;
       if (!aDue && bDue) return 1;
       return a.bookIndex !== b.bookIndex ? a.bookIndex - b.bookIndex : a.chapter - b.chapter;
