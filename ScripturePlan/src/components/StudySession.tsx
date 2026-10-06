@@ -54,9 +54,17 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
 
     const passed = grade >= 3;
 
-    const next = !passed
-      ? [...queue.slice(1), { ...card, memory: updated }]
-      : queue.slice(1);
+    const remaining = queue.slice(1);
+    const next = passed ? remaining : [...remaining, { ...card, memory: updated }];
+
+    const now = new Date().toISOString();
+    const isDue = (c: Card) => c.memory.status === 'learning' && c.memory.dueDate <= now;
+    next.sort((a, b) => {
+      const aDue = isDue(a), bDue = isDue(b);
+      if (aDue && !bDue) return -1;
+      if (!aDue && bDue) return 1;
+      return a.bookIndex !== b.bookIndex ? a.bookIndex - b.bookIndex : a.chapter - b.chapter;
+    });
 
     if (next.length === 0) {
       onClose();
