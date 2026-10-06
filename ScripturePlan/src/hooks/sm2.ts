@@ -59,25 +59,48 @@ export function reviewCard(memory: ThemeMemory, grade: 1 | 2 | 3 | 4 | 5): Theme
     }
 
     const step = getLearningStep(memory);
-    const nextStep = step + 1;
 
-    if (nextStep >= LEARNING_STEPS.length) {
-      // Graduated — Good → 1 day, Easy → 4 days
-      interval = grade >= 4 ? 4 : 1;
-      repetitions = 1;
+    if (grade === 5) {
+      // Easy — graduate immediately
       return {
-        interval,
+        interval: 4,
         easeFactor,
-        dueDate: addDays(interval),
-        repetitions,
+        dueDate: addDays(4),
+        repetitions: 1,
         lapses,
         status: 'review',
       };
     }
 
-    // Advance to next learning step
+    if (grade === 2) {
+      // Hard — repeat current step
+      return {
+        interval: -(step),
+        easeFactor,
+        dueDate: addMinutes(LEARNING_STEPS[step]),
+        repetitions: 0,
+        lapses,
+        status: 'learning',
+      };
+    }
+
+    // Good — advance one step
+    const nextStep = step + 1;
+
+    if (nextStep >= LEARNING_STEPS.length) {
+      // Graduated
+      return {
+        interval: 1,
+        easeFactor,
+        dueDate: addDays(1),
+        repetitions: 1,
+        lapses,
+        status: 'review',
+      };
+    }
+
     return {
-      interval: -(nextStep), // encode next step index
+      interval: -(nextStep),
       easeFactor,
       dueDate: addMinutes(LEARNING_STEPS[nextStep]),
       repetitions: 0,
