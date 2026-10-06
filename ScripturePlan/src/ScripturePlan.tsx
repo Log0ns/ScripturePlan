@@ -577,7 +577,6 @@ export default function Planny() {
       )}
 
       {studyBookIndex !== null && (() => {
-        const today = new Date().toISOString().slice(0, 10);
         const allDue = typeof studyBookIndex === 'number'
           ? getDueCards(studyBookIndex, themes)
           : BIBLE_BOOKS.flatMap((b, i) =>

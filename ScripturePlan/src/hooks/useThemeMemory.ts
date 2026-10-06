@@ -110,7 +110,10 @@ export function useThemeMemory() {
           if (a.bookIndex !== b.bookIndex) return a.bookIndex - b.bookIndex;
           return a.chapter - b.chapter;
         }
-        return a.memory.dueDate.localeCompare(b.memory.dueDate);
+        const dateCmp = a.memory.dueDate.localeCompare(b.memory.dueDate);
+        if (dateCmp !== 0) return dateCmp;
+        if (a.bookIndex !== b.bookIndex) return a.bookIndex - b.bookIndex;
+        return a.chapter - b.chapter;
       });
     },
     [store]
