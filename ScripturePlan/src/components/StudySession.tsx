@@ -70,7 +70,7 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
   const remaining = queue.length - index;
 
   return (
-    <div className={`fixed inset-0 z-50 flex flex-col px-6 pt-12 pb-8 ${panelClass}`}>
+    <div className={`fixed inset-0 z-50 flex flex-col px-6 pb-8 ${panelClass}`} style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <span className={`text-xs font-medium ${isNight ? 'text-slate-400' : 'text-slate-500'}`}>
@@ -112,9 +112,10 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
               <button
                 key={label}
                 onClick={() => handleGrade(grade)}
-                className={`py-2 rounded-xl text-sm font-medium transition-colors ${color}`}
+                className={`py-2 rounded-xl text-sm font-medium transition-colors flex flex-col items-center leading-tight ${color}`}
               >
-                {label}
+                <span>{label}</span>
+                <span className="text-xs opacity-60">{previewInterval(card.memory, grade)}</span>
               </button>
             ))}
           </div>

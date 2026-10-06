@@ -42,7 +42,7 @@ export default function Planny() {
   const [lastResetDate, setLastResetDate] = useLocalStorage<string>('lastResetDate', '');
   const [openOnTap, setOpenOnTap] = useLocalStorage<boolean>('openOnTap', false);
   const [themeOnTap, setThemeOnTap] = useLocalStorage<boolean>('themeOnTap', false);
-  const [studyInOrder, setStudyInOrder] = useLocalStorage<boolean>('studyInOrder', false);
+  const [studyInOrder, setStudyInOrder] = useLocalStorage<boolean>('studyInOrder', true);
 
   const { user, loading, signIn, logOut } = useAuth();
 
@@ -589,13 +589,20 @@ export default function Planny() {
                 if (a.bookIndex !== b.bookIndex) return a.bookIndex - b.bookIndex;
                 return a.chapter - b.chapter;
               }
-              return a.memory.dueDate.localeCompare(b.memory.dueDate);
+              const dateCmp = a.memory.dueDate.localeCompare(b.memory.dueDate);
+              if (dateCmp !== 0) return dateCmp;
+              if (a.bookIndex !== b.bookIndex) return a.bookIndex - b.bookIndex;
+              return a.chapter - b.chapter;
             });
         const cards = studyInOrder
           ? allDue.slice().sort((a, b) => {
               if (a.memory.status === 'new' && b.memory.status !== 'new') return 1;
               if (b.memory.status === 'new' && a.memory.status !== 'new') return -1;
-              if (a.bookIndex !== b.bookIndex) return a.memory.dueDate.localeCompare(b.memory.dueDate);
+              if (a.bookIndex !== b.bookIndex) {
+                const dateCmp = a.memory.dueDate.localeCompare(b.memory.dueDate);
+                if (dateCmp !== 0) return dateCmp;
+                return a.bookIndex - b.bookIndex;
+              }
               return a.chapter - b.chapter;
             })
           : allDue;
