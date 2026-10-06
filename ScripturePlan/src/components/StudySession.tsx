@@ -35,9 +35,12 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
   }, [initialCards]);
 
   const previewInterval = (memory: ThemeMemory, grade: 1 | 2 | 3 | 4 | 5): string => {
-    const { interval } = reviewCard(memory, grade);
-    if (interval < 1) return `${Math.round(interval * 24 * 60)}m`;
-    return `${Math.round(interval)}d`;
+    const result = reviewCard(memory, grade);
+    if (result.status === 'learning') {
+      const mins = Math.round((new Date(result.dueDate).getTime() - Date.now()) / 60000);
+      return mins < 60 ? `${Math.max(1, mins)}m` : `${Math.round(mins / 60)}h`;
+    }
+    return `${result.interval}d`;
   };
 
   const isNight = timeOfDay === 'night';

@@ -62,8 +62,8 @@ export function reviewCard(memory: ThemeMemory, grade: 1 | 2 | 3 | 4 | 5): Theme
     const nextStep = step + 1;
 
     if (nextStep >= LEARNING_STEPS.length) {
-      // Graduated — enter review phase with interval 1 day
-      interval = 1;
+      // Graduated — Good → 1 day, Easy → 4 days
+      interval = grade >= 4 ? 4 : 1;
       repetitions = 1;
       return {
         interval,
