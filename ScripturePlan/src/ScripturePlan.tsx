@@ -605,6 +605,7 @@ export default function Planny() {
               return a.chapter - b.chapter;
             })
           : allDue;
+        console.log('cards[0..4]', cards.slice(0,5).map(c => `b${c.bookIndex}ch${c.chapter}(${c.memory.status})`), 'studyInOrder:', studyInOrder);
         return (
           <StudySession
             cards={cards}
