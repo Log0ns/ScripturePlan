@@ -124,7 +124,10 @@ export function useFirebaseSync(
               ? rawGroups
               : [{ id: 1, name: 'Group 1', icons: (remote as any).icons ?? [] }];
             if (isNewDay) {
-              const readCount = iconGroups.flatMap(g => g.icons).filter(i => i.readToday).length;
+              const readCount = iconGroups.flatMap(g => g.icons).reduce((sum, i) => {
+                const cpd = i.chaptersPerDay ?? 1;
+                return sum + (i.readToday ? cpd : (i.chaptersReadToday ?? 0));
+              }, 0);
               callbacks.setIconGroups(iconGroups.map(g => ({ ...g, icons: g.icons.map(i => ({ ...i, readToday: false, chaptersReadToday: 0 })) })));
               callbacks.setActiveGroupId(remote.activeGroupId ?? iconGroups[0]?.id ?? 1);
               callbacks.setCustomTiles(remote.customTiles.map(t => ({ ...t, activeToday: false })));
@@ -147,7 +150,10 @@ export function useFirebaseSync(
             const today = new Date().toDateString();
             const localResetDate = dataRef.current.lastResetDate;
             if (localResetDate && localResetDate !== today) {
-              const readCount = dataRef.current.iconGroups.flatMap(g => g.icons).filter(i => i.readToday).length;
+              const readCount = dataRef.current.iconGroups.flatMap(g => g.icons).reduce((sum, i) => {
+                const cpd = i.chaptersPerDay ?? 1;
+                return sum + (i.readToday ? cpd : (i.chaptersReadToday ?? 0));
+              }, 0);
               if (readCount > 0) callbacks.setDaysCompleted(dataRef.current.daysCompleted + readCount);
               callbacks.setIconGroups(dataRef.current.iconGroups.map(g => ({ ...g, icons: g.icons.map(i => ({ ...i, readToday: false, chaptersReadToday: 0 })) })));
               callbacks.setCustomTiles(dataRef.current.customTiles.map(t => ({ ...t, activeToday: false })));

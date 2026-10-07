@@ -88,7 +88,10 @@ export default function Planny() {
     const today = new Date().toDateString();
     if (lastResetDate && lastResetDate !== today) {
       setIconGroups(prev => {
-        const readCount = prev.flatMap(g => g.icons).filter(i => i.readToday).length;
+        const readCount = prev.flatMap(g => g.icons).reduce((sum, i) => {
+          const cpd = i.chaptersPerDay ?? 1;
+          return sum + (i.readToday ? cpd : (i.chaptersReadToday ?? 0));
+        }, 0);
         if (readCount > 0) setDaysCompleted(d => d + readCount);
         return prev.map(g => ({ ...g, icons: g.icons.map(i => ({ ...i, readToday: false, chaptersReadToday: 0 })) }));
       });
