@@ -4,7 +4,7 @@ import { TimeOfDay, Themes, ThemeMemoryStore } from '../types';
 import { BIBLE_BOOKS, getFilledStyle } from '../constants';
 import { memorizationPercent, isDue as isMemDue, nextDueLabel } from '../hooks/useThemeMemory';
 
-const MAX_CHARS = 300;
+const MAX_CHARS = 350;
 
 type Props = {
   themes: Themes;
