@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
-import { TimeOfDay, ThemeMemory } from '../types';
+import { TimeOfDay, ThemeMemory, StudySort } from '../types';
 import { BIBLE_BOOKS } from '../constants';
 import { reviewCard } from '../hooks/sm2';
 
@@ -10,6 +10,7 @@ type Props = {
   cards: Card[];
   themes: Record<number, Record<number, string>>;
   timeOfDay: TimeOfDay;
+  sort?: StudySort;
   onUpdateMemory: (bookIndex: number, chapter: number, memory: ThemeMemory) => void;
   onClose: () => void;
 };
@@ -21,7 +22,7 @@ const GRADES: { label: string; grade: 1 | 2 | 3 | 4 | 5; color: string }[] = [
   { label: 'Easy',  grade: 5, color: 'bg-sky-500/20 text-sky-400 hover:bg-sky-500/30' },
 ];
 
-export default function StudySession({ cards: initialCards, themes: initialThemes, timeOfDay, onUpdateMemory, onClose }: Props) {
+export default function StudySession({ cards: initialCards, themes: initialThemes, timeOfDay, sort = 'book-order', onUpdateMemory, onClose }: Props) {
   const [queue, setQueue] = useState<Card[]>([]);
   const [flipped, setFlipped] = useState(false);
   const [themes] = useState(initialThemes);
@@ -68,6 +69,7 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
       const bDue = b.memory.dueDate <= now;
       if (aDue && !bDue) return -1;
       if (!aDue && bDue) return 1;
+      if (sort === 'most-due-first') return a.memory.dueDate < b.memory.dueDate ? -1 : a.memory.dueDate > b.memory.dueDate ? 1 : 0;
       return a.bookIndex !== b.bookIndex ? a.bookIndex - b.bookIndex : a.chapter - b.chapter;
     });
 

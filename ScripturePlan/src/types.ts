@@ -1,4 +1,4 @@
-export type TimeOfDay = 'morning' | 'afternoon' | 'evening' | 'night';
+export type StudySort = 'book-order' | 'random-books' | 'most-due-first';
 
 export type BibleBook = {
   name: string;
@@ -42,7 +42,7 @@ export type MemoryTile = {
 // set of chunkIndexes that have reached 30 days, persisted independently of tiles
 export type CompletedChunks = number[];
 
-// themes[bookIndex][chapter] = theme string (max 300 chars)
+// themes[bookIndex][chapter] = theme string
 export type Themes = Record<number, Record<number, string>>;
 
 export type SRSStatus = 'new' | 'learning' | 'review' | 'mature';

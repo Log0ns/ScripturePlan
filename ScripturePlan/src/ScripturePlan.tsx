@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Plus, WifiOff, BookOpen } from 'lucide-react';
-import { ScriptureIcon, IconGroup, CustomTile, MemoryTile, Themes, CompletedChunks } from './types';
+import { ScriptureIcon, IconGroup, CustomTile, MemoryTile, Themes, CompletedChunks, ThemeMemory } from './types';
 import { BIBLE_BOOKS, DEFAULT_ICONS, READING_PLANS, MEMORY_CHUNKS, getTimeOfDay, getBackgroundGradient, getHeaderStyle, updateMetaThemeColor } from './constants';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useAuth } from './hooks/useAuth';
 import { useFirebaseSync } from './hooks/useFirebaseSync';
 import { useThemeMemory } from './hooks/useThemeMemory';
-import { ReadingTile, PrayerTile, MemorizationTile, SettingsModal, GlobalSettingsModal, CustomTileSettings, ChapterReader, MemoryTileModal, ThemesTab, GroupSwitcher, StudySession } from './components';
+import { ReadingTile, PrayerTile, MemorizationTile, SettingsModal, GlobalSettingsModal, CustomTileSettings, ChapterReader, MemoryTileModal, ThemesTab, GroupSwitcher, StudySession, StudySortModal } from './components';
+import type { StudySort } from './components';
 
 type Tab = 'reading' | 'memorization' | 'themes' | 'prayer';
 
@@ -70,6 +71,9 @@ export default function Planny() {
   const [showGlobalSettings, setShowGlobalSettings] = useState(false);
   const [readingIcon, setReadingIcon] = useState<ScriptureIcon | null>(null);
   const [studyBookIndex, setStudyBookIndex] = useState<number | 'OT' | 'NT' | null>(null);
+  const [pendingStudyScope, setPendingStudyScope] = useState<'OT' | 'NT' | null>(null);
+  const [sortedStudyCards, setSortedStudyCards] = useState<{ bookIndex: number; chapter: number; memory: ThemeMemory }[] | null>(null);
+  const [studySort, setStudySort] = useState<StudySort>('book-order');
   const [online, setOnline] = useState(navigator.onLine);
 
   const isNight = timeOfDay === 'night';
@@ -447,7 +451,10 @@ export default function Planny() {
               timeOfDay={timeOfDay}
               onChange={handleThemeChange}
               memoryStore={memoryStore}
-              onStudy={setStudyBookIndex}
+              onStudy={(scope) => {
+                if (typeof scope === 'number') { setStudyBookIndex(scope); }
+                else { setPendingStudyScope(scope); }
+              }}
               onResetMemory={resetMemory}
               initialView={themeTarget ? { kind: 'editor', bookIndex: themeTarget.bookIndex, chapter: themeTarget.chapter } : undefined}
             />
@@ -576,22 +583,46 @@ export default function Planny() {
         />
       )}
 
+      {pendingStudyScope && (
+        <StudySortModal
+          scope={pendingStudyScope}
+          timeOfDay={timeOfDay}
+          onSelect={(sort) => {
+            const scope = pendingStudyScope;
+            setPendingStudyScope(null);
+            const bookEntries = BIBLE_BOOKS
+              .map((b, i) => ({ b, i }))
+              .filter(({ b }) => b.testament === scope);
+            if (sort === 'random-books') {
+              for (let k = bookEntries.length - 1; k > 0; k--) {
+                const j = Math.floor(Math.random() * (k + 1));
+                [bookEntries[k], bookEntries[j]] = [bookEntries[j], bookEntries[k]];
+              }
+            }
+            let cards = bookEntries.flatMap(({ i }) => getDueCards(i, themes));
+            if (sort === 'most-due-first') {
+              cards = cards.slice().sort((a, b) => a.memory.dueDate < b.memory.dueDate ? -1 : a.memory.dueDate > b.memory.dueDate ? 1 : 0);
+            }
+            setSortedStudyCards(cards);
+            setStudySort(sort);
+            setStudyBookIndex(scope);
+          }}
+          onClose={() => setPendingStudyScope(null)}
+        />
+      )}
+
       {studyBookIndex !== null && (() => {
-        const allDue = typeof studyBookIndex === 'number'
+        const cards = typeof studyBookIndex === 'number'
           ? getDueCards(studyBookIndex, themes)
-          : BIBLE_BOOKS.flatMap((b, i) =>
-              b.testament === studyBookIndex ? getDueCards(i, themes) : []
-            ).sort((a, b) =>
-              a.bookIndex !== b.bookIndex ? a.bookIndex - b.bookIndex : a.chapter - b.chapter
-            );
-        const cards = allDue;
+          : (sortedStudyCards ?? []);
         return (
           <StudySession
             cards={cards}
             themes={themes}
             timeOfDay={timeOfDay}
+            sort={studySort}
             onUpdateMemory={updateMemory}
-            onClose={() => setStudyBookIndex(null)}
+            onClose={() => { setStudyBookIndex(null); setSortedStudyCards(null); setStudySort('book-order'); }}
           />
         );
       })()}
