@@ -622,6 +622,14 @@ export default function Planny() {
             timeOfDay={timeOfDay}
             sort={studySort}
             onUpdateMemory={updateMemory}
+            onGetNewlyDue={() => {
+              if (typeof studyBookIndex === 'number') {
+                return getDueCards(studyBookIndex, themes);
+              }
+              return BIBLE_BOOKS.flatMap((b, i) =>
+                b.testament === studyBookIndex ? getDueCards(i, themes) : []
+              );
+            }}
             onClose={() => { setStudyBookIndex(null); setSortedStudyCards(null); setStudySort('book-order'); }}
           />
         );

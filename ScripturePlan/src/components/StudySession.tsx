@@ -4,7 +4,7 @@ import { TimeOfDay, ThemeMemory, StudySort } from '../types';
 import { BIBLE_BOOKS } from '../constants';
 import { reviewCard } from '../hooks/sm2';
 
-type Card = { bookIndex: number; chapter: number; memory: ThemeMemory };
+type Card = { bookIndex: number; chapter: number; memory: ThemeMemory; failed?: boolean };
 
 type Props = {
   cards: Card[];
@@ -12,6 +12,7 @@ type Props = {
   timeOfDay: TimeOfDay;
   sort?: StudySort;
   onUpdateMemory: (bookIndex: number, chapter: number, memory: ThemeMemory) => void;
+  onGetNewlyDue?: () => Card[];
   onClose: () => void;
 };
 
@@ -22,7 +23,7 @@ const GRADES: { label: string; grade: 1 | 2 | 3 | 4 | 5; color: string }[] = [
   { label: 'Easy',  grade: 5, color: 'bg-sky-500/20 text-sky-400 hover:bg-sky-500/30' },
 ];
 
-export default function StudySession({ cards: initialCards, themes: initialThemes, timeOfDay, sort = 'book-order', onUpdateMemory, onClose }: Props) {
+export default function StudySession({ cards: initialCards, themes: initialThemes, timeOfDay, sort = 'book-order', onUpdateMemory, onGetNewlyDue, onClose }: Props) {
   const [queue, setQueue] = useState<Card[]>([]);
   const [flipped, setFlipped] = useState(false);
   const [themes] = useState(initialThemes);
@@ -46,7 +47,8 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
 
   const isNight = timeOfDay === 'night';
   const nowDisplay = new Date().toISOString();
-  const card = queue[0] && queue[0].memory.dueDate <= nowDisplay ? queue[0] : null;
+  const nextCard = queue[0];
+  const card = nextCard && nextCard.memory.dueDate <= nowDisplay ? nextCard : null;
 
   if (!card) return null;
 
@@ -57,18 +59,14 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
     const passed = grade >= 3;
 
     const rest = queue.slice(1);
-    const failedCard = passed ? null : { ...card, memory: updated };
+    const failedCard = passed ? null : { ...card, memory: updated, failed: true as const };
     const next: Card[] = failedCard ? [...rest, failedCard] : rest;
 
     const now = new Date().toISOString();
-    // For most-due-first: sort due cards by dueDate ascending.
-    // For all other sorts: preserve existing queue order — only move newly-due cards to front.
     if (sort === 'most-due-first') {
       next.sort((a, b) => {
-        const aFailed = a === failedCard;
-        const bFailed = b === failedCard;
-        if (aFailed) return 1;
-        if (bFailed) return -1;
+        if (a.failed && !b.failed) return 1;
+        if (!a.failed && b.failed) return -1;
         const aDue = a.memory.dueDate <= now;
         const bDue = b.memory.dueDate <= now;
         if (aDue && !bDue) return -1;
@@ -76,14 +74,25 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
         return a.memory.dueDate < b.memory.dueDate ? -1 : a.memory.dueDate > b.memory.dueDate ? 1 : 0;
       });
     } else {
-      // Stable: just sink the failed card to back, float any newly-due cards ahead of not-yet-due ones.
-      // We do this without changing relative order among due cards or among not-due cards.
-      const due = next.filter(c => c !== failedCard && c.memory.dueDate <= now);
-      const notDue = next.filter(c => c !== failedCard && c.memory.dueDate > now);
-      next.splice(0, next.length, ...due, ...notDue, ...(failedCard ? [failedCard] : []));
+      const due    = next.filter(c => !c.failed && c.memory.dueDate <= now);
+      const notDue = next.filter(c => !c.failed && c.memory.dueDate > now);
+      const failed = next.filter(c => c.failed);
+      next.splice(0, next.length, ...due, ...notDue, ...failed);
     }
 
-    if (next.length === 0 || next.every(c => c.memory.dueDate > now && c !== failedCard)) {
+    // Pick up any cards that became due mid-session
+    if (onGetNewlyDue) {
+      const seenKeys = new Set(next.map(c => `${c.bookIndex}:${c.chapter}`));
+      seenKeys.add(`${card.bookIndex}:${card.chapter}`);
+      const fresh = onGetNewlyDue().filter(c => !seenKeys.has(`${c.bookIndex}:${c.chapter}`));
+      if (fresh.length > 0) {
+        const failedStart = next.findIndex(c => c.failed);
+        if (sort === 'most-due-first' || failedStart === -1) next.push(...fresh);
+        else next.splice(failedStart, 0, ...fresh);
+      }
+    }
+
+    if (next.length === 0 || next.every(c => c.memory.dueDate > now && !c.failed)) {
       onClose();
     } else {
       setQueue(next);
@@ -103,7 +112,7 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
 
   const bookName = BIBLE_BOOKS[card.bookIndex].name;
   const theme = themes[card.bookIndex]?.[card.chapter] ?? '';
-  const remaining = queue.filter(c => c.memory.dueDate <= nowDisplay).length;
+  const remaining = queue.filter(c => !c.failed && c.memory.dueDate <= nowDisplay).length;
 
   return (
     <div className={`fixed inset-0 z-50 flex flex-col px-6 pb-8 ${panelClass}`} style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
