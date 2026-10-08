@@ -45,7 +45,8 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
   };
 
   const isNight = timeOfDay === 'night';
-  const card = queue[0];
+  const nowDisplay = new Date().toISOString();
+  const card = queue[0] && queue[0].memory.dueDate <= nowDisplay ? queue[0] : null;
 
   if (!card) return null;
 
@@ -82,7 +83,7 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
       next.splice(0, next.length, ...due, ...notDue, ...(failedCard ? [failedCard] : []));
     }
 
-    if (next.length === 0) {
+    if (next.length === 0 || next.every(c => c.memory.dueDate > now && c !== failedCard)) {
       onClose();
     } else {
       setQueue(next);
@@ -94,6 +95,7 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
     ? 'bg-slate-900/95 text-slate-100'
     : 'bg-white/95 text-slate-800';
 
+
   const cardClass = isNight
     ? 'bg-slate-800 border border-slate-700'
     : 'bg-white border border-slate-200';
@@ -101,7 +103,7 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
 
   const bookName = BIBLE_BOOKS[card.bookIndex].name;
   const theme = themes[card.bookIndex]?.[card.chapter] ?? '';
-  const remaining = queue.length;
+  const remaining = queue.filter(c => c.memory.dueDate <= nowDisplay).length;
 
   return (
     <div className={`fixed inset-0 z-50 flex flex-col px-6 pb-8 ${panelClass}`} style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
