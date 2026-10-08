@@ -60,18 +60,27 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
     const next: Card[] = failedCard ? [...rest, failedCard] : rest;
 
     const now = new Date().toISOString();
-    next.sort((a, b) => {
-      const aFailed = a === failedCard;
-      const bFailed = b === failedCard;
-      if (aFailed) return 1;
-      if (bFailed) return -1;
-      const aDue = a.memory.dueDate <= now;
-      const bDue = b.memory.dueDate <= now;
-      if (aDue && !bDue) return -1;
-      if (!aDue && bDue) return 1;
-      if (sort === 'most-due-first') return a.memory.dueDate < b.memory.dueDate ? -1 : a.memory.dueDate > b.memory.dueDate ? 1 : 0;
-      return a.bookIndex !== b.bookIndex ? a.bookIndex - b.bookIndex : a.chapter - b.chapter;
-    });
+    // For most-due-first: sort due cards by dueDate ascending.
+    // For all other sorts: preserve existing queue order — only move newly-due cards to front.
+    if (sort === 'most-due-first') {
+      next.sort((a, b) => {
+        const aFailed = a === failedCard;
+        const bFailed = b === failedCard;
+        if (aFailed) return 1;
+        if (bFailed) return -1;
+        const aDue = a.memory.dueDate <= now;
+        const bDue = b.memory.dueDate <= now;
+        if (aDue && !bDue) return -1;
+        if (!aDue && bDue) return 1;
+        return a.memory.dueDate < b.memory.dueDate ? -1 : a.memory.dueDate > b.memory.dueDate ? 1 : 0;
+      });
+    } else {
+      // Stable: just sink the failed card to back, float any newly-due cards ahead of not-yet-due ones.
+      // We do this without changing relative order among due cards or among not-due cards.
+      const due = next.filter(c => c !== failedCard && c.memory.dueDate <= now);
+      const notDue = next.filter(c => c !== failedCard && c.memory.dueDate > now);
+      next.splice(0, next.length, ...due, ...notDue, ...(failedCard ? [failedCard] : []));
+    }
 
     if (next.length === 0) {
       onClose();
