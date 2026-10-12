@@ -470,6 +470,8 @@ export default function Planny() {
               timeOfDay={timeOfDay}
               onChange={handleThemeChange}
               memoryStore={memoryStore}
+              audioEnabled={audioEnabled}
+              onToggleAudio={() => setAudioEnabled(v => !v)}
               onStudy={(scope) => {
                 if (typeof scope === 'number') { setStudyBookIndex(scope); }
                 else { setPendingStudyScope(scope); }
@@ -620,8 +622,6 @@ export default function Planny() {
         <StudySortModal
           scope={pendingStudyScope}
           timeOfDay={timeOfDay}
-          audioEnabled={audioEnabled}
-          onToggleAudio={() => setAudioEnabled(v => !v)}
           onSelect={(sort) => {
             const scope = pendingStudyScope;
             setPendingStudyScope(null);

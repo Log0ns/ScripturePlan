@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronDown, ChevronRight, ChevronLeft, ArrowLeft, Mic, MicOff, BookOpenCheck } from 'lucide-react';
+import { ChevronDown, ChevronRight, ChevronLeft, ArrowLeft, Mic, MicOff, BookOpenCheck, Volume2, VolumeX } from 'lucide-react';
 import { TimeOfDay, Themes, ThemeMemoryStore } from '../types';
 import { BIBLE_BOOKS, getFilledStyle } from '../constants';
 import { memorizationPercent, isDue as isMemDue, nextDueLabel } from '../hooks/useThemeMemory';
@@ -14,6 +14,8 @@ type Props = {
   memoryStore?: ThemeMemoryStore;
   onStudy?: (scope: number | 'OT' | 'NT') => void;
   onResetMemory?: (bookIndex: number, chapter: number) => void;
+  audioEnabled?: boolean;
+  onToggleAudio?: () => void;
 };
 
 type View =
@@ -50,7 +52,7 @@ const FILL_COLORS: Record<TimeOfDay, string> = {
   night:     'rgba(251,191,36,0.45)',
 };
 
-export default function ThemesTab({ themes, timeOfDay, onChange, initialView, memoryStore, onStudy, onResetMemory }: Props) {
+export default function ThemesTab({ themes, timeOfDay, onChange, initialView, memoryStore, onStudy, onResetMemory, audioEnabled, onToggleAudio }: Props) {
   const [view, setView] = useState<View>(initialView ?? { kind: 'list' });
   const [otOpen, setOtOpen] = useState(() => {
     try { return localStorage.getItem('themes-ot-open') === 'true'; } catch { return false; }
@@ -386,8 +388,17 @@ export default function ThemesTab({ themes, timeOfDay, onChange, initialView, me
   return (
     <div className="space-y-4">
       {/* Progress summary */}
-      <div className={`text-xs mb-2 ${isNight ? 'text-slate-500' : 'text-slate-400'}`}>
-        {totalFilled} / {totalChapters} chapters
+      <div className="flex items-center justify-between mb-2">
+        <div className={`text-xs ${isNight ? 'text-slate-500' : 'text-slate-400'}`}>
+          {totalFilled} / {totalChapters} chapters
+        </div>
+        {onToggleAudio && (
+          <button onClick={onToggleAudio} className={`p-2 rounded-lg transition-colors ${isNight ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}>
+            {audioEnabled
+              ? <Volume2 className="w-4 h-4 text-amber-400" />
+              : <VolumeX className={`w-4 h-4 ${isNight ? 'text-slate-500' : 'text-slate-400'}`} />}
+          </button>
+        )}
       </div>
 
       {/* OT section */}
