@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import { Plus, WifiOff, BookOpen } from 'lucide-react';
 import { ScriptureIcon, IconGroup, CustomTile, MemoryTile, Themes, CompletedChunks, ThemeMemory } from './types';
 import { BIBLE_BOOKS, DEFAULT_ICONS, READING_PLANS, MEMORY_CHUNKS, getTimeOfDay, getBackgroundGradient, getHeaderStyle, updateMetaThemeColor } from './constants';
@@ -6,8 +6,11 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import { useAuth } from './hooks/useAuth';
 import { useFirebaseSync } from './hooks/useFirebaseSync';
 import { useThemeMemory } from './hooks/useThemeMemory';
-import { ReadingTile, PrayerTile, MemorizationTile, SettingsModal, GlobalSettingsModal, CustomTileSettings, ChapterReader, MemoryTileModal, ThemesTab, GroupSwitcher, StudySession, StudySortModal, BulkAddPrayerModal } from './components';
+import { ReadingTile, PrayerTile, MemorizationTile, SettingsModal, GlobalSettingsModal, CustomTileSettings, ChapterReader, MemoryTileModal, GroupSwitcher, StudySortModal, BulkAddPrayerModal } from './components';
 import type { StudySort } from './components';
+
+const ThemesTab = lazy(() => import('./components/ThemesTab'));
+const StudySession = lazy(() => import('./components/StudySession'));
 
 type Tab = 'reading' | 'memorization' | 'themes' | 'prayer';
 
@@ -418,6 +421,7 @@ export default function Planny() {
         </div>
 
         {/* Tab content */}
+        <Suspense fallback={null}>
         <div className="px-6 pt-6 pb-8 max-w-md mx-auto">
 
           {/* Tab: Reading */}
@@ -501,9 +505,10 @@ export default function Planny() {
             </div>
           )}
         </div>
+        </Suspense>
       </div>
 
-      {/* Bottom Toolbar */}
+      {/* Bottom Toolbar */
       <div className={`fixed bottom-0 left-0 right-0 z-50 ${isNight ? 'bg-slate-900/90 border-slate-700' : 'bg-white/90 border-slate-200'} border-t`}>
         <div className="max-w-md mx-auto flex items-center justify-between px-6 py-3">
           <div className="flex items-center gap-4">
@@ -646,6 +651,7 @@ export default function Planny() {
           ? getDueCards(studyBookIndex, themes)
           : (sortedStudyCards ?? []);
         return (
+          <Suspense fallback={null}>
           <StudySession
             cards={cards}
             themes={themes}
@@ -663,6 +669,7 @@ export default function Planny() {
             }}
             onClose={() => { setStudyBookIndex(null); setSortedStudyCards(null); setStudySort('book-order'); }}
           />
+          </Suspense>
         );
       })()}
 
