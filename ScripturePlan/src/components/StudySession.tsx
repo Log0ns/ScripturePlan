@@ -34,20 +34,21 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
   const initialized = useRef(false);
   const [audioPhase, setAudioPhase] = useState<AudioPhase>('done');
   const [readyForGrade, setReadyForGrade] = useState(false);
-  const stopListenRef = useRef<(() => void) | null>(null);
   const handleRevealRef = useRef<() => void>(() => {});
   const handleGradeRef = useRef<(g: 1 | 2 | 3 | 4 | 5) => void>(() => {});
   const [listeningForGrade, setListeningForGrade] = useState(false);
   const audioUnlockedRef = useRef(false);
-  const [audioReady, setAudioReady] = useState(!audioEnabled);
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
+  const readyListenStopRef = useRef<(() => void) | null>(null);
+  const gradeListenStopRef = useRef<(() => void) | null>(null);
   const { speak, listen, cancel } = useAudio();
 
-  const unlockAudio = useCallback(() => {
-    if (audioUnlockedRef.current || !audioEnabled) return;
-    audioUnlockedRef.current = true;
-    const utt = new SpeechSynthesisUtterance('');
-    window.speechSynthesis.speak(utt);
-    setAudioReady(true);
+  // Android: resume TTS when page becomes visible again
+  useEffect(() => {
+    if (!audioEnabled) return;
+    const onVisible = () => { if (document.visibilityState === 'visible') window.speechSynthesis.resume(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
   }, [audioEnabled]);
 
   useEffect(() => {
@@ -66,64 +67,92 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
     return `${result.interval}d`;
   };
 
-  // When card changes and audio is enabled, speak the prompt
-  const cardKey = queue[0] ? `${queue[0].bookIndex}:${queue[0].chapter}` : null;
-  useEffect(() => {
-    if (!audioEnabled || !cardKey || !audioReady) return;
-    const [bi, ch] = cardKey.split(':').map(Number);
+  const speakPrompt = useCallback((bi: number, ch: number) => {
     const bookName = BIBLE_BOOKS[bi].name;
     setAudioPhase('speaking-prompt');
+    speak(`${bookName}, Chapter ${ch}`).then(() => setAudioPhase('waiting-ready'));
+  }, [speak]);
+
+  // When card changes: if already unlocked speak immediately, else wait for tap
+  const cardKey = queue[0] ? `${queue[0].bookIndex}:${queue[0].chapter}` : null;
+  useEffect(() => {
+    if (!audioEnabled || !cardKey) return;
+    readyListenStopRef.current?.(); readyListenStopRef.current = null;
+    gradeListenStopRef.current?.(); gradeListenStopRef.current = null;
+    cancel();
     setFlipped(false);
-    speak(`${bookName}, Chapter ${ch}`).then(() => {
-      setAudioPhase('waiting-ready');
-    });
-    return () => { cancel(); stopListenRef.current?.(); stopListenRef.current = null; };
+    setReadyForGrade(false);
+    if (audioUnlockedRef.current) {
+      const [bi, ch] = cardKey.split(':').map(Number);
+      speakPrompt(bi, ch);
+    } else {
+      setAudioPhase('waiting-ready'); // iOS: show "tap to hear" until first gesture
+    }
+    return () => { cancel(); readyListenStopRef.current?.(); readyListenStopRef.current = null; };
   }, [audioEnabled, cardKey]);
 
-  // Start listening for "ready" when in waiting-ready phase
-  useEffect(() => {
-    if (audioPhase !== 'waiting-ready') return;
-    const stop = listen((transcript) => {
-      if (transcript.includes('ready')) handleRevealRef.current();
-    });
-    stopListenRef.current = stop;
-    return () => { stop(); stopListenRef.current = null; };
-  }, [audioPhase]);
-
   const handleReveal = useCallback(() => {
-    stopListenRef.current?.();
-    stopListenRef.current = null;
+    const c = queue[0];
+    if (!c) return;
+
+    // iOS: first tap unlocks TTS and speaks the prompt — don't reveal yet
+    if (audioEnabled && !audioUnlockedRef.current) {
+      audioUnlockedRef.current = true;
+      setAudioUnlocked(true);
+      speakPrompt(c.bookIndex, c.chapter);
+      return;
+    }
+
+    readyListenStopRef.current?.(); readyListenStopRef.current = null;
     setFlipped(true);
+
     if (!audioEnabled) {
       setReadyForGrade(true);
       return;
     }
-    const c = queue[0];
-    if (!c) return;
+
     const theme = initialThemes[c.bookIndex]?.[c.chapter] ?? '';
     setAudioPhase('speaking-theme');
     speak(theme || 'No theme recorded').then(() => {
       setAudioPhase('done');
       setReadyForGrade(true);
     });
-  }, [audioEnabled, queue, initialThemes, speak]);
+  }, [audioEnabled, queue, initialThemes, speak, speakPrompt]);
 
   handleRevealRef.current = handleReveal;
 
-  // Listen for voice grade only after theme TTS has fully finished
+  // Fix #3: separate ref for ready-listener
+  useEffect(() => {
+    if (!audioEnabled || audioPhase !== 'waiting-ready') return;
+    const stop = listen((transcript) => {
+      if (transcript.includes('ready')) handleRevealRef.current();
+    });
+    readyListenStopRef.current = stop;
+    return () => { stop(); readyListenStopRef.current = null; };
+  }, [audioEnabled, audioPhase]);
+
+  // Fix #3: separate ref for grade-listener; Fix #2: only starts after readyForGrade
   useEffect(() => {
     if (!audioEnabled || !readyForGrade) return;
     setListeningForGrade(true);
     const VOICE_GRADES: [string, 1 | 2 | 3 | 4 | 5][] = [
       ['again', 1], ['hard', 2], ['good', 3], ['easy', 5],
     ];
-    const stop = listen((transcript) => {
-      for (const [word, grade] of VOICE_GRADES) {
-        if (transcript.includes(word)) { handleGradeRef.current(grade); return; }
-      }
-    });
-    stopListenRef.current = stop;
-    return () => { stop(); stopListenRef.current = null; setListeningForGrade(false); };
+    // Small delay so residual TTS audio doesn't accidentally trigger a grade
+    const timer = setTimeout(() => {
+      const stop = listen((transcript) => {
+        for (const [word, grade] of VOICE_GRADES) {
+          if (transcript.includes(word)) { handleGradeRef.current(grade); return; }
+        }
+      });
+      gradeListenStopRef.current = stop;
+    }, 600);
+    return () => {
+      clearTimeout(timer);
+      gradeListenStopRef.current?.();
+      gradeListenStopRef.current = null;
+      setListeningForGrade(false);
+    };
   }, [audioEnabled, readyForGrade]);
 
   const isNight = timeOfDay === 'night';
@@ -135,8 +164,8 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
 
   const handleGrade = (grade: 1 | 2 | 3 | 4 | 5) => {
     cancel();
-    stopListenRef.current?.();
-    stopListenRef.current = null;
+    readyListenStopRef.current?.(); readyListenStopRef.current = null;
+    gradeListenStopRef.current?.(); gradeListenStopRef.current = null;
     setAudioPhase('done');
     setReadyForGrade(false);
     setListeningForGrade(false);
@@ -190,8 +219,6 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
 
   handleGradeRef.current = handleGrade;
 
-  const waitingReady = audioEnabled && audioPhase === 'waiting-ready';
-
   const panelClass = isNight
     ? 'bg-slate-900/95 text-slate-100'
     : 'bg-white/95 text-slate-800';
@@ -207,7 +234,7 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
   const remaining = queue.filter(c => !c.failed && c.memory.dueDate <= nowDisplay).length;
 
   return (
-    <div className={`fixed inset-0 z-50 flex flex-col px-6 pb-8 ${panelClass}`} style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }} onClick={unlockAudio}>
+    <div className={`fixed inset-0 z-50 flex flex-col px-6 pb-8 ${panelClass}`} style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <span className={`text-xs font-medium ${isNight ? 'text-slate-400' : 'text-slate-500'}`}>
@@ -222,7 +249,7 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
       <div className="flex-1 flex flex-col items-center justify-center gap-6">
         <div
           className={`w-full max-w-sm rounded-2xl p-8 text-center cursor-pointer select-none ${cardClass}`}
-          onClick={() => !flipped && (waitingReady ? handleReveal() : !audioEnabled && setFlipped(true))}
+          onClick={() => { if (!flipped) handleReveal(); }}
         >
           <div className={`text-2xl font-bold mb-1 ${isNight ? 'text-slate-100' : 'text-slate-800'}`}>
             {bookName}
@@ -235,27 +262,17 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
             <div className={`mt-6 pt-6 border-t text-sm leading-relaxed ${isNight ? 'border-slate-700 text-slate-200' : 'border-slate-200 text-slate-700'}`}>
               {theme || <span className={isNight ? 'text-slate-500' : 'text-slate-400'}>No theme recorded</span>}
             </div>
-          ) : waitingReady ? (
-            <div className={`mt-6 text-sm font-medium animate-pulse ${isNight ? 'text-amber-400' : 'text-amber-600'}`}>
-              Tap when ready
-            </div>
           ) : audioPhase === 'speaking-prompt' ? (
-            <div className={`mt-6 text-xs ${isNight ? 'text-slate-500' : 'text-slate-400'}`}>
-              …
-            </div>
-          ) : audioEnabled && !audioReady ? (
-            <div className={`mt-6 text-sm font-medium animate-pulse ${isNight ? 'text-amber-400' : 'text-amber-600'}`}>
-              Tap to begin
-            </div>
+            <div className={`mt-6 text-xs animate-pulse ${isNight ? 'text-slate-500' : 'text-slate-400'}`}>…</div>
           ) : (
             <div className={`mt-6 text-xs ${isNight ? 'text-slate-500' : 'text-slate-400'}`}>
-              tap to reveal
+              {audioEnabled && !audioUnlocked ? 'tap to hear' : 'tap to reveal'}
             </div>
           )}
         </div>
 
-        {/* Grade buttons — only shown after flip */}
-        {flipped && (
+        {/* Grade buttons — only shown after TTS finishes (readyForGrade) */}
+        {(audioEnabled ? readyForGrade : flipped) && (
           <div className="flex flex-col items-center gap-3 w-full max-w-sm">
             {audioEnabled && listeningForGrade && (
               <div className={`flex items-center gap-1.5 text-xs ${isNight ? 'text-slate-400' : 'text-slate-500'}`}>
