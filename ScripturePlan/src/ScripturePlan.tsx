@@ -81,15 +81,22 @@ export default function Planny() {
   const [audioEnabled, setAudioEnabled] = useLocalStorage<boolean>('study-audio-enabled', false);
   const [online, setOnline] = useState(navigator.onLine);
 
-  const handleBulkAddPrayer = (items: string[]) => {
+  const handleBulkAddPrayer = (items: string[], tilesToUse: number) => {
     setCustomTiles(prev => {
-      if (prev.length === 0) return prev;
-      const tiles = prev.map(t => ({ ...t, items: [...t.items] }));
-      for (const item of items) {
-        const min = Math.min(...tiles.map(t => t.items.length));
-        tiles.find(t => t.items.length === min)!.items.push(item);
+      // Create new tiles if needed
+      const newTiles = prev.map(t => ({ ...t, items: [...t.items] }));
+      while (newTiles.length < tilesToUse) {
+        newTiles.push({
+          id: Math.max(0, ...newTiles.map(t => t.id)) + 1,
+          items: [], index: 0, activeToday: false,
+        });
       }
-      return tiles;
+      // Spread items across tiles round-robin by least populated
+      for (const item of items) {
+        const min = Math.min(...newTiles.map(t => t.items.length));
+        newTiles.find(t => t.items.length === min)!.items.push(item);
+      }
+      return newTiles;
     });
     setShowBulkAddPrayer(false);
   };
@@ -484,8 +491,7 @@ export default function Planny() {
           {/* Tab: Prayer */}
           {tab === 'prayer' && (
             <div>
-            {customTiles.length > 0 && (
-              <button
+            <button
                 onClick={() => setShowBulkAddPrayer(true)}
                 className={`mb-4 w-full py-2 rounded-xl text-xs font-semibold transition-colors ${
                   isNight ? 'bg-slate-800/60 text-slate-300 hover:bg-slate-700/60' : 'bg-white/60 text-slate-600 hover:bg-white/90'
@@ -493,7 +499,6 @@ export default function Planny() {
               >
                 + Add Prayers
               </button>
-            )}
             <div className="grid grid-cols-2 gap-4">
               {customTiles.map(tile => (
                 <PrayerTile key={tile.id} tile={tile} timeOfDay={timeOfDay} onTap={handleCustomTap} onLongPress={handleCustomLongPress} />
@@ -676,6 +681,8 @@ export default function Planny() {
       {showBulkAddPrayer && (
         <BulkAddPrayerModal
           timeOfDay={timeOfDay}
+          currentTileCount={customTiles.length}
+          maxTiles={10}
           onAdd={handleBulkAddPrayer}
           onClose={() => setShowBulkAddPrayer(false)}
         />
