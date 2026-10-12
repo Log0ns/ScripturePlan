@@ -508,7 +508,7 @@ export default function Planny() {
         </Suspense>
       </div>
 
-      {/* Bottom Toolbar */
+      {/* Bottom Toolbar */}
       <div className={`fixed bottom-0 left-0 right-0 z-50 ${isNight ? 'bg-slate-900/90 border-slate-700' : 'bg-white/90 border-slate-200'} border-t`}>
         <div className="max-w-md mx-auto flex items-center justify-between px-6 py-3">
           <div className="flex items-center gap-4">
