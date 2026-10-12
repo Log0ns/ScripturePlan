@@ -80,11 +80,11 @@ export function useThemeMemory() {
   const getDueCards = useCallback(
     (bookIndex?: number, themes?: Record<number, Record<number, string>>): Array<{ bookIndex: number; chapter: number; memory: ThemeMemory }> => {
       const results: Array<{ bookIndex: number; chapter: number; memory: ThemeMemory }> = [];
+      const freshStore: ThemeMemoryStore = load();
 
-      const books = bookIndex !== undefined ? [bookIndex] : Object.keys(store).map(Number);
+      const books = bookIndex !== undefined ? [bookIndex] : Object.keys(freshStore).map(Number);
       for (const b of books) {
-        // Include chapters that exist in store and are due
-        const chapters = store[b];
+        const chapters = freshStore[b];
         if (chapters) {
           for (const c of Object.keys(chapters).map(Number)) {
             const mem = chapters[c];
@@ -93,7 +93,6 @@ export function useThemeMemory() {
             }
           }
         }
-        // Also include populated chapters with no memory record (never studied — always due)
         if (themes?.[b]) {
           for (const c of Object.keys(themes[b]).map(Number)) {
             if (themes[b][c] && !chapters?.[c]) {
@@ -107,7 +106,7 @@ export function useThemeMemory() {
         a.bookIndex !== b.bookIndex ? a.bookIndex - b.bookIndex : a.chapter - b.chapter
       );
     },
-    [store]
+    [] // no dependency on store — reads fresh from localStorage each call
   );
 
   const clearMemory = useCallback(() => {

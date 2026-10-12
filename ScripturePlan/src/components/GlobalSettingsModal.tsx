@@ -11,6 +11,7 @@ type Props = {
   onClearMemoryProgress: () => void;
   onClearThemes: () => void;
   onClearSRSProgress: () => void;
+  onClearPrayerTiles: () => void;
   onExportThemes: () => void;
   openOnTap: boolean;
   onToggleOpenOnTap: () => void;
@@ -21,7 +22,7 @@ type Props = {
 
 const selectClass = "w-full p-3 border border-slate-600 rounded-xl bg-slate-700 text-slate-100 focus:outline-none focus:border-amber-500";
 
-export default function GlobalSettingsModal({ user, onSignIn, onSignOut, onApplyPlan, onResetDayCounter, onClearMemoryProgress, onClearThemes, onClearSRSProgress, onExportThemes, openOnTap, onToggleOpenOnTap, themeOnTap, onToggleThemeOnTap, onClose }: Props) {
+export default function GlobalSettingsModal({ user, onSignIn, onSignOut, onApplyPlan, onResetDayCounter, onClearMemoryProgress, onClearThemes, onClearSRSProgress, onClearPrayerTiles, onExportThemes, openOnTap, onToggleOpenOnTap, themeOnTap, onToggleThemeOnTap, onClose }: Props) {
   const [selectedPlan, setSelectedPlan] = useState('Default');
   const [confirming, setConfirming] = useState<string | null>(null);
 
@@ -176,6 +177,12 @@ export default function GlobalSettingsModal({ user, onSignIn, onSignOut, onApply
             className={`mt-3 ${confirming === 'srs' ? confirmBtn : normalBtn}`}
           >
             {confirming === 'srs' ? 'Tap again to confirm' : 'Clear Theme Memorization Progress'}
+          </button>
+          <button
+            onClick={() => confirmable('prayer', onClearPrayerTiles)}
+            className={`mt-3 ${confirming === 'prayer' ? confirmBtn : normalBtn}`}
+          >
+            {confirming === 'prayer' ? 'Tap again to confirm' : 'Clear Prayer Tile Items'}
           </button>
           {confirming && (
             <button

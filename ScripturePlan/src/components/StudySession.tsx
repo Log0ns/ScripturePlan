@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X } from 'lucide-react';
 import { TimeOfDay, ThemeMemory, StudySort } from '../types';
 import { BIBLE_BOOKS } from '../constants';
 import { reviewCard } from '../hooks/sm2';
+import { useAudio } from '../hooks/useAudio';
 
 type Card = { bookIndex: number; chapter: number; memory: ThemeMemory; failed?: boolean };
 
@@ -11,6 +12,7 @@ type Props = {
   themes: Record<number, Record<number, string>>;
   timeOfDay: TimeOfDay;
   sort?: StudySort;
+  audioEnabled?: boolean;
   onUpdateMemory: (bookIndex: number, chapter: number, memory: ThemeMemory) => void;
   onGetNewlyDue?: () => Card[];
   onClose: () => void;
@@ -23,11 +25,30 @@ const GRADES: { label: string; grade: 1 | 2 | 3 | 4 | 5; color: string }[] = [
   { label: 'Easy',  grade: 5, color: 'bg-sky-500/20 text-sky-400 hover:bg-sky-500/30' },
 ];
 
-export default function StudySession({ cards: initialCards, themes: initialThemes, timeOfDay, sort = 'book-order', onUpdateMemory, onGetNewlyDue, onClose }: Props) {
+type AudioPhase = 'speaking-prompt' | 'waiting-ready' | 'speaking-theme' | 'done';
+
+export default function StudySession({ cards: initialCards, themes: initialThemes, timeOfDay, sort = 'book-order', audioEnabled = false, onUpdateMemory, onGetNewlyDue, onClose }: Props) {
   const [queue, setQueue] = useState<Card[]>([]);
   const [flipped, setFlipped] = useState(false);
   const [themes] = useState(initialThemes);
   const initialized = useRef(false);
+  const [audioPhase, setAudioPhase] = useState<AudioPhase>('done');
+  const [readyForGrade, setReadyForGrade] = useState(false);
+  const stopListenRef = useRef<(() => void) | null>(null);
+  const handleRevealRef = useRef<() => void>(() => {});
+  const handleGradeRef = useRef<(g: 1 | 2 | 3 | 4 | 5) => void>(() => {});
+  const [listeningForGrade, setListeningForGrade] = useState(false);
+  const audioUnlockedRef = useRef(false);
+  const [audioReady, setAudioReady] = useState(!audioEnabled);
+  const { speak, listen, cancel } = useAudio();
+
+  const unlockAudio = useCallback(() => {
+    if (audioUnlockedRef.current || !audioEnabled) return;
+    audioUnlockedRef.current = true;
+    const utt = new SpeechSynthesisUtterance('');
+    window.speechSynthesis.speak(utt);
+    setAudioReady(true);
+  }, [audioEnabled]);
 
   useEffect(() => {
     if (!initialized.current && initialCards.length > 0) {
@@ -45,6 +66,66 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
     return `${result.interval}d`;
   };
 
+  // When card changes and audio is enabled, speak the prompt
+  const cardKey = queue[0] ? `${queue[0].bookIndex}:${queue[0].chapter}` : null;
+  useEffect(() => {
+    if (!audioEnabled || !cardKey || !audioReady) return;
+    const [bi, ch] = cardKey.split(':').map(Number);
+    const bookName = BIBLE_BOOKS[bi].name;
+    setAudioPhase('speaking-prompt');
+    setFlipped(false);
+    speak(`${bookName}, Chapter ${ch}`).then(() => {
+      setAudioPhase('waiting-ready');
+    });
+    return () => { cancel(); stopListenRef.current?.(); stopListenRef.current = null; };
+  }, [audioEnabled, cardKey]);
+
+  // Start listening for "ready" when in waiting-ready phase
+  useEffect(() => {
+    if (audioPhase !== 'waiting-ready') return;
+    const stop = listen((transcript) => {
+      if (transcript.includes('ready')) handleRevealRef.current();
+    });
+    stopListenRef.current = stop;
+    return () => { stop(); stopListenRef.current = null; };
+  }, [audioPhase]);
+
+  const handleReveal = useCallback(() => {
+    stopListenRef.current?.();
+    stopListenRef.current = null;
+    setFlipped(true);
+    if (!audioEnabled) {
+      setReadyForGrade(true);
+      return;
+    }
+    const c = queue[0];
+    if (!c) return;
+    const theme = initialThemes[c.bookIndex]?.[c.chapter] ?? '';
+    setAudioPhase('speaking-theme');
+    speak(theme || 'No theme recorded').then(() => {
+      setAudioPhase('done');
+      setReadyForGrade(true);
+    });
+  }, [audioEnabled, queue, initialThemes, speak]);
+
+  handleRevealRef.current = handleReveal;
+
+  // Listen for voice grade only after theme TTS has fully finished
+  useEffect(() => {
+    if (!audioEnabled || !readyForGrade) return;
+    setListeningForGrade(true);
+    const VOICE_GRADES: [string, 1 | 2 | 3 | 4 | 5][] = [
+      ['again', 1], ['hard', 2], ['good', 3], ['easy', 5],
+    ];
+    const stop = listen((transcript) => {
+      for (const [word, grade] of VOICE_GRADES) {
+        if (transcript.includes(word)) { handleGradeRef.current(grade); return; }
+      }
+    });
+    stopListenRef.current = stop;
+    return () => { stop(); stopListenRef.current = null; setListeningForGrade(false); };
+  }, [audioEnabled, readyForGrade]);
+
   const isNight = timeOfDay === 'night';
   const nowDisplay = new Date().toISOString();
   const nextCard = queue[0];
@@ -53,6 +134,12 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
   if (!card) return null;
 
   const handleGrade = (grade: 1 | 2 | 3 | 4 | 5) => {
+    cancel();
+    stopListenRef.current?.();
+    stopListenRef.current = null;
+    setAudioPhase('done');
+    setReadyForGrade(false);
+    setListeningForGrade(false);
     const updated = reviewCard(card.memory, grade);
     onUpdateMemory(card.bookIndex, card.chapter, updated);
 
@@ -97,8 +184,13 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
     } else {
       setQueue(next);
       setFlipped(false);
+      setReadyForGrade(false);
     }
   };
+
+  handleGradeRef.current = handleGrade;
+
+  const waitingReady = audioEnabled && audioPhase === 'waiting-ready';
 
   const panelClass = isNight
     ? 'bg-slate-900/95 text-slate-100'
@@ -115,7 +207,7 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
   const remaining = queue.filter(c => !c.failed && c.memory.dueDate <= nowDisplay).length;
 
   return (
-    <div className={`fixed inset-0 z-50 flex flex-col px-6 pb-8 ${panelClass}`} style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
+    <div className={`fixed inset-0 z-50 flex flex-col px-6 pb-8 ${panelClass}`} style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }} onClick={unlockAudio}>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <span className={`text-xs font-medium ${isNight ? 'text-slate-400' : 'text-slate-500'}`}>
@@ -130,7 +222,7 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
       <div className="flex-1 flex flex-col items-center justify-center gap-6">
         <div
           className={`w-full max-w-sm rounded-2xl p-8 text-center cursor-pointer select-none ${cardClass}`}
-          onClick={() => !flipped && setFlipped(true)}
+          onClick={() => !flipped && (waitingReady ? handleReveal() : !audioEnabled && setFlipped(true))}
         >
           <div className={`text-2xl font-bold mb-1 ${isNight ? 'text-slate-100' : 'text-slate-800'}`}>
             {bookName}
@@ -143,6 +235,18 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
             <div className={`mt-6 pt-6 border-t text-sm leading-relaxed ${isNight ? 'border-slate-700 text-slate-200' : 'border-slate-200 text-slate-700'}`}>
               {theme || <span className={isNight ? 'text-slate-500' : 'text-slate-400'}>No theme recorded</span>}
             </div>
+          ) : waitingReady ? (
+            <div className={`mt-6 text-sm font-medium animate-pulse ${isNight ? 'text-amber-400' : 'text-amber-600'}`}>
+              Tap when ready
+            </div>
+          ) : audioPhase === 'speaking-prompt' ? (
+            <div className={`mt-6 text-xs ${isNight ? 'text-slate-500' : 'text-slate-400'}`}>
+              …
+            </div>
+          ) : audioEnabled && !audioReady ? (
+            <div className={`mt-6 text-sm font-medium animate-pulse ${isNight ? 'text-amber-400' : 'text-amber-600'}`}>
+              Tap to begin
+            </div>
           ) : (
             <div className={`mt-6 text-xs ${isNight ? 'text-slate-500' : 'text-slate-400'}`}>
               tap to reveal
@@ -152,17 +256,27 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
 
         {/* Grade buttons — only shown after flip */}
         {flipped && (
-          <div className="grid grid-cols-4 gap-2 w-full max-w-sm">
-            {GRADES.map(({ label, grade, color }) => (
-              <button
-                key={label}
-                onClick={() => handleGrade(grade)}
-                className={`py-2 rounded-xl text-sm font-medium transition-colors flex flex-col items-center leading-tight ${color}`}
-              >
-                <span>{label}</span>
-                <span className="text-xs opacity-60">{previewInterval(card.memory, grade)}</span>
-              </button>
-            ))}
+          <div className="flex flex-col items-center gap-3 w-full max-w-sm">
+            {audioEnabled && listeningForGrade && (
+              <div className={`flex items-center gap-1.5 text-xs ${isNight ? 'text-slate-400' : 'text-slate-500'}`}>
+                <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+                listening…
+              </div>
+            )}
+            <div className={`grid grid-cols-4 w-full ${audioEnabled ? 'gap-3' : 'gap-2'}`}>
+              {GRADES.map(({ label, grade, color }) => (
+                <button
+                  key={label}
+                  onClick={() => handleGrade(grade)}
+                  className={`rounded-xl font-medium transition-colors flex flex-col items-center leading-tight ${color} ${
+                    audioEnabled ? 'py-5 text-base' : 'py-2 text-sm'
+                  }`}
+                >
+                  <span>{label}</span>
+                  <span className="text-xs opacity-60">{previewInterval(card.memory, grade)}</span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>

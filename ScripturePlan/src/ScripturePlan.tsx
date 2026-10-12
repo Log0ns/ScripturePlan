@@ -6,7 +6,7 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import { useAuth } from './hooks/useAuth';
 import { useFirebaseSync } from './hooks/useFirebaseSync';
 import { useThemeMemory } from './hooks/useThemeMemory';
-import { ReadingTile, PrayerTile, MemorizationTile, SettingsModal, GlobalSettingsModal, CustomTileSettings, ChapterReader, MemoryTileModal, ThemesTab, GroupSwitcher, StudySession, StudySortModal } from './components';
+import { ReadingTile, PrayerTile, MemorizationTile, SettingsModal, GlobalSettingsModal, CustomTileSettings, ChapterReader, MemoryTileModal, ThemesTab, GroupSwitcher, StudySession, StudySortModal, BulkAddPrayerModal } from './components';
 import type { StudySort } from './components';
 
 type Tab = 'reading' | 'memorization' | 'themes' | 'prayer';
@@ -74,7 +74,22 @@ export default function Planny() {
   const [pendingStudyScope, setPendingStudyScope] = useState<'OT' | 'NT' | null>(null);
   const [sortedStudyCards, setSortedStudyCards] = useState<{ bookIndex: number; chapter: number; memory: ThemeMemory }[] | null>(null);
   const [studySort, setStudySort] = useState<StudySort>('book-order');
+  const [showBulkAddPrayer, setShowBulkAddPrayer] = useState(false);
+  const [audioEnabled, setAudioEnabled] = useLocalStorage<boolean>('study-audio-enabled', false);
   const [online, setOnline] = useState(navigator.onLine);
+
+  const handleBulkAddPrayer = (items: string[]) => {
+    setCustomTiles(prev => {
+      if (prev.length === 0) return prev;
+      const tiles = prev.map(t => ({ ...t, items: [...t.items] }));
+      for (const item of items) {
+        const min = Math.min(...tiles.map(t => t.items.length));
+        tiles.find(t => t.items.length === min)!.items.push(item);
+      }
+      return tiles;
+    });
+    setShowBulkAddPrayer(false);
+  };
 
   const isNight = timeOfDay === 'night';
 
@@ -462,6 +477,17 @@ export default function Planny() {
 
           {/* Tab: Prayer */}
           {tab === 'prayer' && (
+            <div>
+            {customTiles.length > 0 && (
+              <button
+                onClick={() => setShowBulkAddPrayer(true)}
+                className={`mb-4 w-full py-2 rounded-xl text-xs font-semibold transition-colors ${
+                  isNight ? 'bg-slate-800/60 text-slate-300 hover:bg-slate-700/60' : 'bg-white/60 text-slate-600 hover:bg-white/90'
+                }`}
+              >
+                + Add Prayers
+              </button>
+            )}
             <div className="grid grid-cols-2 gap-4">
               {customTiles.map(tile => (
                 <PrayerTile key={tile.id} tile={tile} timeOfDay={timeOfDay} onTap={handleCustomTap} onLongPress={handleCustomLongPress} />
@@ -471,6 +497,7 @@ export default function Planny() {
                   <Plus className={`w-8 h-8 ${isNight ? 'text-slate-500' : 'text-slate-400'}`} />
                 </button>
               )}
+            </div>
             </div>
           )}
         </div>
@@ -514,6 +541,7 @@ export default function Planny() {
           onResetDayCounter={() => setDaysCompleted(0)}
           onClearMemoryProgress={() => setCompletedChunks([])}
           onClearSRSProgress={clearMemory}
+          onClearPrayerTiles={() => setCustomTiles(prev => prev.map(t => ({ ...t, items: [], index: 0 })))}
           onExportThemes={exportThemes}
           onClearThemes={() => {
             if (themeDebounceRef.current) { clearTimeout(themeDebounceRef.current); themeDebounceRef.current = null; }
@@ -587,6 +615,8 @@ export default function Planny() {
         <StudySortModal
           scope={pendingStudyScope}
           timeOfDay={timeOfDay}
+          audioEnabled={audioEnabled}
+          onToggleAudio={() => setAudioEnabled(v => !v)}
           onSelect={(sort) => {
             const scope = pendingStudyScope;
             setPendingStudyScope(null);
@@ -621,6 +651,7 @@ export default function Planny() {
             themes={themes}
             timeOfDay={timeOfDay}
             sort={studySort}
+            audioEnabled={audioEnabled}
             onUpdateMemory={updateMemory}
             onGetNewlyDue={() => {
               if (typeof studyBookIndex === 'number') {
@@ -634,6 +665,14 @@ export default function Planny() {
           />
         );
       })()}
+
+      {showBulkAddPrayer && (
+        <BulkAddPrayerModal
+          timeOfDay={timeOfDay}
+          onAdd={handleBulkAddPrayer}
+          onClose={() => setShowBulkAddPrayer(false)}
+        />
+      )}
 
       {selectedMemoryTile && (
         <MemoryTileModal

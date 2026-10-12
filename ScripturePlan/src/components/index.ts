@@ -11,4 +11,5 @@ export { default as GroupSwitcher } from './GroupSwitcher';
 export { default as TileShell } from './TileShell';
 export { default as StudySession } from './StudySession';
 export { default as StudySortModal } from './StudySortModal';
+export { default as BulkAddPrayerModal } from './BulkAddPrayerModal';
 export type { StudySort } from '../types';
