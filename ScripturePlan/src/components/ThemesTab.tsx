@@ -328,7 +328,7 @@ export default function ThemesTab({ themes, timeOfDay, onChange, initialView, me
                 <span>{ch}</span>
                 {label && <span className={`text-[10px] leading-none ${isOverdue ? 'text-red-400' : 'opacity-70'}`}>{label}</span>}
                 {mem?.verseScore != null && mem.verseScore !== 0 && (
-                  <span className={`absolute bottom-1 right-1.5 text-[9px] font-bold leading-none ${mem.verseScore > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <span className={`absolute top-1 right-1.5 text-[9px] font-bold leading-none ${mem.verseScore > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                     {mem.verseScore > 0 ? `+${mem.verseScore}` : mem.verseScore}
                   </span>
                 )}

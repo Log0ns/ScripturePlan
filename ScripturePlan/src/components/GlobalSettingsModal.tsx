@@ -51,6 +51,22 @@ export default function GlobalSettingsModal({ user, onSignIn, onSignOut, onApply
           </button>
         </div>
 
+        {/* Account */}
+        <div className="mb-6">
+          <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3 block">Account</label>
+          {user ? (
+            <div className="space-y-3">
+              <p className="text-sm text-slate-300">Signed in as {user.displayName || user.email}</p>
+              <button onClick={onSignOut} className="w-full p-3 bg-slate-700 text-slate-200 rounded-xl font-medium hover:bg-slate-600 transition-colors">Sign Out</button>
+            </div>
+          ) : (
+            <button onClick={onSignIn} className="w-full p-3 bg-white text-slate-800 rounded-xl font-medium hover:bg-slate-100 transition-colors">Sign in with Google</button>
+          )}
+        </div>
+
+        {/* Divider */}
+        <div className="h-px bg-slate-700 my-6" />
+
         {/* Reading Plan */}
         <div className="mb-6">
           <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2 block">Reading Plan</label>
@@ -116,27 +132,6 @@ export default function GlobalSettingsModal({ user, onSignIn, onSignOut, onApply
             <label htmlFor="themeOnTap" className="text-sm text-slate-300">Open chapter theme after marking read</label>
           </div>
 
-        </div>
-        <div className="mb-6">
-          <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3 block">Account</label>
-          {user ? (
-            <div className="space-y-3">
-              <p className="text-sm text-slate-300">Signed in as {user.displayName || user.email}</p>
-              <button
-                onClick={onSignOut}
-                className="w-full p-3 bg-slate-700 text-slate-200 rounded-xl font-medium hover:bg-slate-600 transition-colors"
-              >
-                Sign Out
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={onSignIn}
-              className="w-full p-3 bg-white text-slate-800 rounded-xl font-medium hover:bg-slate-100 transition-colors"
-            >
-              Sign in with Google
-            </button>
-          )}
         </div>
 
         {/* Divider */}

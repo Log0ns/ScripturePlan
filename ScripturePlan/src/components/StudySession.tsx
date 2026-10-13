@@ -190,7 +190,8 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
   useEffect(() => {
     if (!audioEnabled || !readyForGrade) return;
     setListeningForGrade(true);
-    const VOICE_GRADES: [string, 1 | 2 | 3 | 4 | 5][] = mode === 'verse'
+    const promptMode = currentCard?.promptMode ?? 'reference';
+    const VOICE_GRADES: [string, 1 | 2 | 3 | 4 | 5][] = promptMode === 'verse'
       ? [['wrong', 1], ['right', 5]]
       : [['again', 1], ['hard', 2], ['good', 3], ['easy', 5]];
     // Small delay so residual TTS audio doesn't accidentally trigger a grade
@@ -208,7 +209,7 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
       gradeListenStopRef.current = null;
       setListeningForGrade(false);
     };
-  }, [audioEnabled, readyForGrade, mode]);
+  }, [audioEnabled, readyForGrade, currentCard?.promptMode]);
 
   const [now, setNow] = useState(() => new Date().toISOString());
   useEffect(() => {

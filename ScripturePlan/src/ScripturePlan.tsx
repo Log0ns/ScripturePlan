@@ -7,6 +7,7 @@ import { useAuth } from './hooks/useAuth';
 import { useFirebaseSync } from './hooks/useFirebaseSync';
 import { useThemeMemory, sortCards, isDue } from './hooks/useThemeMemory';
 import { ReadingTile, PrayerTile, MemorizationTile, SettingsModal, GlobalSettingsModal, CustomTileSettings, ChapterReader, MemoryTileModal, GroupSwitcher, StudySortModal, BulkAddPrayerModal } from './components';
+import ErrorBoundary from './components/ErrorBoundary';
 import type { StudySort } from './components';
 
 const ThemesTab = lazy(() => import('./components/ThemesTab'));
@@ -659,6 +660,7 @@ export default function Planny() {
           : (sortedStudyCards ?? []);
         return (
           <Suspense fallback={null}>
+          <ErrorBoundary onClose={() => { setStudyBookIndex(null); setSortedStudyCards(null); setStudySort('book-order'); }}>
           <StudySession
             cards={cards}
             themes={themes}
@@ -672,6 +674,7 @@ export default function Planny() {
             }}
             onClose={() => { setStudyBookIndex(null); setSortedStudyCards(null); setStudySort('book-order'); }}
           />
+          </ErrorBoundary>
           </Suspense>
         );
       })()}
