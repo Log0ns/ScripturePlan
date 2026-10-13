@@ -666,6 +666,10 @@ export default function Planny() {
             sort={studySort}
             audioEnabled={audioEnabled}
             onUpdateMemory={updateMemory}
+            onUpdateVerseScore={(bookIndex, chapter, delta) => {
+              const existing = memoryStore[bookIndex]?.[chapter];
+              if (existing) updateMemory(bookIndex, chapter, { ...existing, verseScore: Math.max(-5, (existing.verseScore ?? 0) + delta) });
+            }}
             onClose={() => { setStudyBookIndex(null); setSortedStudyCards(null); setStudySort('book-order'); }}
           />
           </Suspense>

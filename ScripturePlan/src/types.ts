@@ -54,6 +54,7 @@ export type ThemeMemory = {
   repetitions: number;   // consecutive correct reviews
   lapses: number;        // total times card has been failed
   status: SRSStatus;
+  verseScore?: number;   // running tally of verse-mode correct (+1) / wrong (-1)
 };
 
 // themeMemory[bookIndex][chapter] = ThemeMemory

@@ -323,10 +323,15 @@ export default function ThemesTab({ themes, timeOfDay, onChange, initialView, me
                 key={ch}
                 onClick={() => setView({ kind: 'editor', bookIndex: view.bookIndex, chapter: ch })}
                 style={bgStyle}
-                className={`py-2 rounded-xl text-sm font-medium transition-colors flex flex-col items-center justify-center gap-0.5 ${isFilled ? filled.text : unfilled}`}
+                className={`py-2 rounded-xl text-sm font-medium transition-colors flex flex-col items-center justify-center gap-0.5 relative ${isFilled ? filled.text : unfilled}`}
               >
                 <span>{ch}</span>
                 {label && <span className={`text-[10px] leading-none ${isOverdue ? 'text-red-400' : 'opacity-70'}`}>{label}</span>}
+                {mem?.verseScore != null && mem.verseScore !== 0 && (
+                  <span className={`absolute bottom-1 right-1.5 text-[9px] font-bold leading-none ${mem.verseScore > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {mem.verseScore > 0 ? `+${mem.verseScore}` : mem.verseScore}
+                  </span>
+                )}
               </button>
             );
           })}

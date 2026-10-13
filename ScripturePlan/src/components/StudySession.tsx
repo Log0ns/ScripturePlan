@@ -24,6 +24,7 @@ type Props = {
   sort?: StudySort;
   audioEnabled?: boolean;
   onUpdateMemory: (bookIndex: number, chapter: number, memory: ThemeMemory) => void;
+  onUpdateVerseScore: (bookIndex: number, chapter: number, delta: number) => void;
   onClose: () => void;
 };
 
@@ -36,7 +37,7 @@ const GRADES: { label: string; grade: 1 | 2 | 3 | 4 | 5; color: string }[] = [
 
 type AudioPhase = 'speaking-prompt' | 'waiting-ready' | 'speaking-theme' | 'done';
 
-export default function StudySession({ cards: initialCards, themes: initialThemes, timeOfDay, sort = 'book-order', audioEnabled = false, onUpdateMemory, onClose }: Props) {
+export default function StudySession({ cards: initialCards, themes: initialThemes, timeOfDay, sort = 'book-order', audioEnabled = false, onUpdateMemory, onUpdateVerseScore, onClose }: Props) {
   const [queue, setQueue] = useState<Card[]>([]);
   const [currentCard, setCurrentCard] = useState<Card | null>(null);
   const [flipped, setFlipped] = useState(false);
@@ -242,6 +243,23 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
     setAudioPhase('done');
     setReadyForGrade(false);
     setListeningForGrade(false);
+
+    // Verse mode: only update score counter, never affect SRS or re-queue
+    if (card.promptMode === 'verse') {
+      onUpdateVerseScore(card.bookIndex, card.chapter, grade >= 3 ? 1 : -1);
+      const rest = queue.slice(1);
+      if (rest.length === 0) { onClose(); return; }
+      const rawNext = rest[0];
+      const nextWithPrompt = rawNext && !rawNext.promptMode ? assignPrompt(rawNext) : rawNext;
+      if (nextWithPrompt !== rawNext) rest[0] = nextWithPrompt;
+      const nowTs = new Date().toISOString();
+      setQueue(rest);
+      setCurrentCard(rawNext.memory.dueDate <= nowTs ? nextWithPrompt : null);
+      setFlipped(false);
+      setReadyForGrade(false);
+      return;
+    }
+
     const updated = reviewCard(card.memory, grade);
     onUpdateMemory(card.bookIndex, card.chapter, updated);
 
