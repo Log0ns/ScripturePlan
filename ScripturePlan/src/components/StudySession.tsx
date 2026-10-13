@@ -190,9 +190,9 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
   useEffect(() => {
     if (!audioEnabled || !readyForGrade) return;
     setListeningForGrade(true);
-    const VOICE_GRADES: [string, 1 | 2 | 3 | 4 | 5][] = [
-      ['again', 1], ['hard', 2], ['good', 3], ['easy', 5],
-    ];
+    const VOICE_GRADES: [string, 1 | 2 | 3 | 4 | 5][] = mode === 'verse'
+      ? [['wrong', 1], ['right', 5]]
+      : [['again', 1], ['hard', 2], ['good', 3], ['easy', 5]];
     // Small delay so residual TTS audio doesn't accidentally trigger a grade
     const timer = setTimeout(() => {
       const stop = listen((transcript) => {
@@ -208,7 +208,7 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
       gradeListenStopRef.current = null;
       setListeningForGrade(false);
     };
-  }, [audioEnabled, readyForGrade]);
+  }, [audioEnabled, readyForGrade, mode]);
 
   const [now, setNow] = useState(() => new Date().toISOString());
   useEffect(() => {
@@ -235,6 +235,7 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
   }, [now, currentCard, queue.length]);
 
   const card = currentCard;
+  const mode = card?.promptMode ?? 'reference';
 
   const handleGrade = (grade: 1 | 2 | 3 | 4 | 5) => {
     cancel();
@@ -326,7 +327,6 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
   const bookName = BIBLE_BOOKS[card.bookIndex].name;
   const theme = themes[card.bookIndex]?.[card.chapter] ?? '';
   const remaining = queue.length;
-  const mode = card.promptMode ?? 'reference';
 
   // Prompt face content
   const promptFace = mode === 'theme' ? (
@@ -349,14 +349,20 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
 
   // Answer face content
   const answerFace = mode === 'reference' ? (
-    <div className={`mt-6 pt-6 border-t text-sm leading-relaxed ${isNight ? 'border-slate-700 text-slate-200' : 'border-slate-200 text-slate-700'}`}>
-      {theme || <span className={isNight ? 'text-slate-500' : 'text-slate-400'}>No theme recorded</span>}
-    </div>
+    <>
+      {promptFace}
+      <div className={`mt-6 pt-6 border-t text-sm leading-relaxed ${isNight ? 'border-slate-700 text-slate-200' : 'border-slate-200 text-slate-700'}`}>
+        {theme || <span className={isNight ? 'text-slate-500' : 'text-slate-400'}>No theme recorded</span>}
+      </div>
+    </>
   ) : (
-    <div className={`mt-6 pt-6 border-t ${isNight ? 'border-slate-700' : 'border-slate-200'}`}>
-      <div className={`text-lg font-bold ${isNight ? 'text-slate-100' : 'text-slate-800'}`}>{bookName} {card.chapter}</div>
-      {theme && <div className={`mt-2 text-sm leading-relaxed ${isNight ? 'text-slate-300' : 'text-slate-600'}`}>{theme}</div>}
-    </div>
+    <>
+      {promptFace}
+      <div className={`mt-6 pt-6 border-t ${isNight ? 'border-slate-700' : 'border-slate-200'}`}>
+        <div className={`text-lg font-bold ${isNight ? 'text-slate-100' : 'text-slate-800'}`}>{bookName} {card.chapter}</div>
+        {theme && <div className={`mt-2 text-sm leading-relaxed ${isNight ? 'text-slate-300' : 'text-slate-600'}`}>{theme}</div>}
+      </div>
+    </>
   );
 
   return (
@@ -405,20 +411,27 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
                 listening…
               </div>
             )}
-            <div className={`grid grid-cols-4 w-full ${audioEnabled ? 'gap-3' : 'gap-2'}`}>
-              {GRADES.map(({ label, grade, color }) => (
-                <button
-                  key={label}
-                  onClick={() => handleGrade(grade)}
-                  className={`rounded-xl font-medium transition-colors flex flex-col items-center leading-tight ${color} ${
-                    audioEnabled ? 'py-5 text-base' : 'py-2 text-sm'
-                  }`}
-                >
-                  <span>{label}</span>
-                  <span className="text-xs opacity-60">{previewInterval(card.memory, grade)}</span>
-                </button>
-              ))}
-            </div>
+            {mode === 'verse' ? (
+              <div className="grid grid-cols-2 w-full gap-3">
+                <button onClick={() => handleGrade(1)} className={`rounded-xl font-medium transition-colors py-4 text-sm bg-red-500/20 text-red-400 hover:bg-red-500/30`}>Wrong</button>
+                <button onClick={() => handleGrade(5)} className={`rounded-xl font-medium transition-colors py-4 text-sm bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30`}>Right</button>
+              </div>
+            ) : (
+              <div className={`grid grid-cols-4 w-full ${audioEnabled ? 'gap-3' : 'gap-2'}`}>
+                {GRADES.map(({ label, grade, color }) => (
+                  <button
+                    key={label}
+                    onClick={() => handleGrade(grade)}
+                    className={`rounded-xl font-medium transition-colors flex flex-col items-center leading-tight ${color} ${
+                      audioEnabled ? 'py-5 text-base' : 'py-2 text-sm'
+                    }`}
+                  >
+                    <span>{label}</span>
+                    <span className="text-xs opacity-60">{previewInterval(card.memory, grade)}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

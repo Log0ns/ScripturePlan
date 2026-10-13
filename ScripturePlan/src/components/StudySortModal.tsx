@@ -17,7 +17,7 @@ const OPTIONS: { sort: StudySort; label: string; desc: string }[] = [
 
 export default function StudySortModal({ scope, timeOfDay, onSelect, onClose }: Props) {
   const [includeNotDue, setIncludeNotDue] = useState(false);
-  const [studiedOnly, setStudiedOnly] = useState(false);
+  const [studiedOnly, setStudiedOnly] = useState(true);
   const isNight = timeOfDay === 'night';
   const panel = isNight ? 'bg-slate-900/95 text-slate-100' : 'bg-white/95 text-slate-800';
   const row   = isNight ? 'bg-slate-800 hover:bg-slate-700 border-slate-700' : 'bg-white hover:bg-slate-50 border-slate-200';
@@ -47,7 +47,8 @@ export default function StudySortModal({ scope, timeOfDay, onSelect, onClose }: 
 
         <button
           onClick={() => setIncludeNotDue(v => !v)}
-          className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl border transition-colors ${row}`}
+          className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl border transition-colors ml-6 ${row}`}
+          style={{ width: 'calc(100% - 1.5rem)' }}
         >
           <div>
             <div className={`text-sm font-semibold mb-0.5 ${isNight ? 'text-slate-100' : 'text-slate-800'}`}>Include not-yet-due</div>
