@@ -247,6 +247,14 @@ export default function ThemesTab({ themes, timeOfDay, onChange, initialView, me
   if (view.kind === 'chapters') {
     const book = BIBLE_BOOKS[view.bookIndex];
     const chaptersFilled = filledCount(view.bookIndex);
+    let bookDueCount = 0;
+    let hasBookMemory = false;
+    for (let ch = 1; ch <= book.chapters; ch++) {
+      if (!themes[view.bookIndex]?.[ch]) continue;
+      const mem = memoryStore?.[view.bookIndex]?.[ch];
+      if (mem) hasBookMemory = true;
+      if (!mem || isMemDue(mem.dueDate)) bookDueCount++;
+    }
     return (
       <div>
         <button onClick={goBack} className={`flex items-center gap-1 mb-4 ${isNight ? 'text-slate-400' : 'text-slate-500'}`}>
@@ -254,7 +262,34 @@ export default function ThemesTab({ themes, timeOfDay, onChange, initialView, me
           <span className="text-xs font-medium">Books</span>
         </button>
 
-        <div className={`text-sm font-medium mb-1 ${isNight ? 'text-slate-200' : 'text-slate-700'}`}>{book.name}</div>
+        <div className="flex items-center justify-between mb-1">
+          <div className={`text-sm font-medium ${isNight ? 'text-slate-200' : 'text-slate-700'}`}>{book.name}</div>
+          <div className="flex items-center gap-1">
+            {onStudy && bookDueCount > 0 && (
+              <button
+                onClick={() => onStudy(view.bookIndex)}
+                className={`flex items-center gap-1 p-1 rounded-lg transition-colors ${isNight ? 'hover:bg-slate-700 text-amber-400' : 'hover:bg-slate-100 text-amber-600'}`}
+              >
+                <span className="text-xs font-bold tabular-nums">{bookDueCount}</span>
+                <BookOpenCheck className="w-4 h-4" />
+              </button>
+            )}
+            {onResetMemory && hasBookMemory && (
+                <button
+                  onClick={() => {
+                    for (let ch = 1; ch <= book.chapters; ch++) {
+                      if (memoryStore?.[view.bookIndex]?.[ch]) onResetMemory(view.bookIndex, ch);
+                    }
+                  }}
+                  className={`text-xs px-2 py-1 rounded-lg transition-colors ${
+                    isNight ? 'text-slate-500 hover:text-red-400 hover:bg-slate-800' : 'text-slate-400 hover:text-red-500 hover:bg-slate-100'
+                  }`}
+                >
+                  Reset
+                </button>
+              )}
+          </div>
+        </div>
         <div className={`text-xs mb-4 ${isNight ? 'text-slate-500' : 'text-slate-400'}`}>
           {chaptersFilled} / {book.chapters} chapters
         </div>

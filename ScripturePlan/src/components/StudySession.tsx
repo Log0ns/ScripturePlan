@@ -3,9 +3,19 @@ import { X } from 'lucide-react';
 import { TimeOfDay, ThemeMemory, StudySort } from '../types';
 import { BIBLE_BOOKS } from '../constants';
 import { reviewCard } from '../hooks/sm2';
+import { sortCards } from '../hooks/useThemeMemory';
 import { useAudio } from '../hooks/useAudio';
 
-type Card = { bookIndex: number; chapter: number; memory: ThemeMemory; failed?: boolean };
+type PromptMode = 'reference' | 'theme' | 'verse';
+type Card = { bookIndex: number; chapter: number; memory: ThemeMemory; promptMode?: PromptMode; verseText?: string; verseNum?: number };
+type BibleData = Record<string, Record<string, { verse: number; text: string }[]>>;
+
+function randomPromptMode(theme: string, hasVerses: boolean): PromptMode {
+  const modes: PromptMode[] = ['reference'];
+  if (theme) modes.push('theme');
+  if (hasVerses) modes.push('verse');
+  return modes[Math.floor(Math.random() * modes.length)];
+}
 
 type Props = {
   cards: Card[];
@@ -14,7 +24,6 @@ type Props = {
   sort?: StudySort;
   audioEnabled?: boolean;
   onUpdateMemory: (bookIndex: number, chapter: number, memory: ThemeMemory) => void;
-  onGetNewlyDue?: () => Card[];
   onClose: () => void;
 };
 
@@ -27,8 +36,9 @@ const GRADES: { label: string; grade: 1 | 2 | 3 | 4 | 5; color: string }[] = [
 
 type AudioPhase = 'speaking-prompt' | 'waiting-ready' | 'speaking-theme' | 'done';
 
-export default function StudySession({ cards: initialCards, themes: initialThemes, timeOfDay, sort = 'book-order', audioEnabled = false, onUpdateMemory, onGetNewlyDue, onClose }: Props) {
+export default function StudySession({ cards: initialCards, themes: initialThemes, timeOfDay, sort = 'book-order', audioEnabled = false, onUpdateMemory, onClose }: Props) {
   const [queue, setQueue] = useState<Card[]>([]);
+  const [currentCard, setCurrentCard] = useState<Card | null>(null);
   const [flipped, setFlipped] = useState(false);
   const [themes] = useState(initialThemes);
   const initialized = useRef(false);
@@ -43,7 +53,24 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
   const gradeListenStopRef = useRef<(() => void) | null>(null);
   const { speak, listen, cancel } = useAudio();
 
-  // Android: resume TTS when page becomes visible again
+  const bibleRef = useRef<BibleData | null>(null);
+  const [bibleLoaded, setBibleLoaded] = useState(false);
+  useEffect(() => {
+    fetch('/bible.json').then(r => r.json()).then(d => { bibleRef.current = d; setBibleLoaded(true); }).catch(() => setBibleLoaded(true));
+  }, []);
+
+  const assignPrompt = useCallback((c: Card): Card => {
+    const theme = initialThemes[c.bookIndex]?.[c.chapter] ?? '';
+    const bookName = BIBLE_BOOKS[c.bookIndex].name;
+    const verses = bibleRef.current?.[bookName]?.[String(c.chapter)] ?? [];
+    const mode = randomPromptMode(theme, verses.length > 0);
+    if (mode === 'verse' && verses.length > 0) {
+      const v = verses[Math.floor(Math.random() * verses.length)];
+      return { ...c, promptMode: mode, verseText: v.text, verseNum: v.verse };
+    }
+    return { ...c, promptMode: mode };
+  }, [initialThemes]);
+
   useEffect(() => {
     if (!audioEnabled) return;
     const onVisible = () => { if (document.visibilityState === 'visible') window.speechSynthesis.resume(); };
@@ -52,11 +79,12 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
   }, [audioEnabled]);
 
   useEffect(() => {
-    if (!initialized.current && initialCards.length > 0) {
-      initialized.current = true;
-      setQueue(initialCards);
-    }
-  }, [initialCards]);
+    if (!bibleLoaded || initialized.current || initialCards.length === 0) return;
+    initialized.current = true;
+    const first = assignPrompt(initialCards[0]);
+    setQueue([first, ...initialCards.slice(1)]);
+    setCurrentCard(first);
+  }, [bibleLoaded, initialCards]);
 
   const previewInterval = (memory: ThemeMemory, grade: 1 | 2 | 3 | 4 | 5): string => {
     const result = reviewCard(memory, grade);
@@ -67,14 +95,19 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
     return `${result.interval}d`;
   };
 
-  const speakPrompt = useCallback((bi: number, ch: number) => {
-    const bookName = BIBLE_BOOKS[bi].name;
+  const speakPrompt = useCallback((c: Card) => {
+    const bookName = BIBLE_BOOKS[c.bookIndex].name;
+    const theme = initialThemes[c.bookIndex]?.[c.chapter] ?? '';
+    let text: string;
+    if (c.promptMode === 'theme') text = theme || 'No theme recorded';
+    else if (c.promptMode === 'verse') text = c.verseText ?? `${bookName}, Chapter ${c.chapter}`;
+    else text = `${bookName}, Chapter ${c.chapter}`;
     setAudioPhase('speaking-prompt');
-    speak(`${bookName}, Chapter ${ch}`).then(() => setAudioPhase('waiting-ready'));
-  }, [speak]);
+    speak(text).then(() => setAudioPhase('waiting-ready'));
+  }, [speak, initialThemes]);
 
   // When card changes: if already unlocked speak immediately, else wait for tap
-  const cardKey = queue[0] ? `${queue[0].bookIndex}:${queue[0].chapter}` : null;
+  const cardKey = currentCard ? `${currentCard.bookIndex}:${currentCard.chapter}:${currentCard.promptMode}` : null;
   useEffect(() => {
     if (!audioEnabled || !cardKey) return;
     readyListenStopRef.current?.(); readyListenStopRef.current = null;
@@ -82,24 +115,23 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
     cancel();
     setFlipped(false);
     setReadyForGrade(false);
-    if (audioUnlockedRef.current) {
-      const [bi, ch] = cardKey.split(':').map(Number);
-      speakPrompt(bi, ch);
+    if (audioUnlockedRef.current && currentCard) {
+      speakPrompt(currentCard);
     } else {
-      setAudioPhase('waiting-ready'); // iOS: show "tap to hear" until first gesture
+      setAudioPhase('waiting-ready');
     }
     return () => { cancel(); readyListenStopRef.current?.(); readyListenStopRef.current = null; };
   }, [audioEnabled, cardKey]);
 
   const handleReveal = useCallback(() => {
-    const c = queue[0];
+    const c = currentCard;
     if (!c) return;
 
     // iOS: first tap unlocks TTS and speaks the prompt — don't reveal yet
     if (audioEnabled && !audioUnlockedRef.current) {
       audioUnlockedRef.current = true;
       setAudioUnlocked(true);
-      speakPrompt(c.bookIndex, c.chapter);
+      speakPrompt(c);
       return;
     }
 
@@ -113,11 +145,15 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
 
     const theme = initialThemes[c.bookIndex]?.[c.chapter] ?? '';
     setAudioPhase('speaking-theme');
-    speak(theme || 'No theme recorded').then(() => {
+    // For theme/verse prompt modes, speak the reference as the answer
+    const answerText = (c.promptMode === 'theme' || c.promptMode === 'verse')
+      ? `${BIBLE_BOOKS[c.bookIndex].name}, Chapter ${c.chapter}${theme ? '. ' + theme : ''}`
+      : (theme || 'No theme recorded');
+    speak(answerText).then(() => {
       setAudioPhase('done');
       setReadyForGrade(true);
     });
-  }, [audioEnabled, queue, initialThemes, speak, speakPrompt]);
+  }, [audioEnabled, currentCard, initialThemes, speak, speakPrompt]);
 
   handleRevealRef.current = handleReveal;
 
@@ -155,12 +191,31 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
     };
   }, [audioEnabled, readyForGrade]);
 
-  const isNight = timeOfDay === 'night';
-  const nowDisplay = new Date().toISOString();
-  const nextCard = queue[0];
-  const card = nextCard && nextCard.memory.dueDate <= nowDisplay ? nextCard : null;
+  const [now, setNow] = useState(() => new Date().toISOString());
+  useEffect(() => {
+    const interval = currentCard ? 10_000 : 1_000;
+    const t = setInterval(() => setNow(new Date().toISOString()), interval);
+    return () => clearInterval(t);
+  }, [currentCard !== null]);
 
-  if (!card) return null;
+  const isNight = timeOfDay === 'night';
+
+  // When waiting: surface the next card as soon as it becomes due
+  useEffect(() => {
+    if (currentCard !== null || queue.length === 0) return;
+    const nextDueIdx = queue.findIndex(c => c.memory.dueDate <= now);
+    if (nextDueIdx >= 0) {
+      const next = [...queue];
+      const due = assignPrompt(next[nextDueIdx]);
+      next[nextDueIdx] = due;
+      next.splice(nextDueIdx, 1);
+      next.unshift(due);
+      setQueue(next);
+      setCurrentCard(due);
+    }
+  }, [now, currentCard, queue.length]);
+
+  const card = currentCard;
 
   const handleGrade = (grade: 1 | 2 | 3 | 4 | 5) => {
     cancel();
@@ -173,48 +228,28 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
     onUpdateMemory(card.bookIndex, card.chapter, updated);
 
     const passed = grade >= 3;
-
     const rest = queue.slice(1);
-    const failedCard = passed ? null : { ...card, memory: updated, failed: true as const };
-    const next: Card[] = failedCard ? [...rest, failedCard] : rest;
-
-    const now = new Date().toISOString();
-    if (sort === 'most-due-first') {
-      next.sort((a, b) => {
-        if (a.failed && !b.failed) return 1;
-        if (!a.failed && b.failed) return -1;
-        const aDue = a.memory.dueDate <= now;
-        const bDue = b.memory.dueDate <= now;
-        if (aDue && !bDue) return -1;
-        if (!aDue && bDue) return 1;
-        return a.memory.dueDate < b.memory.dueDate ? -1 : a.memory.dueDate > b.memory.dueDate ? 1 : 0;
-      });
-    } else {
-      const due    = next.filter(c => !c.failed && c.memory.dueDate <= now);
-      const notDue = next.filter(c => !c.failed && c.memory.dueDate > now);
-      const failed = next.filter(c => c.failed);
-      next.splice(0, next.length, ...due, ...notDue, ...failed);
+    const next: Card[] = passed ? rest : [...rest, { bookIndex: card.bookIndex, chapter: card.chapter, memory: updated }];
+    if (sort !== 'random-books-random') {
+      const sorted = sortCards(next, sort);
+      sorted.forEach((c, i) => { next[i] = c; });
     }
 
-    // Pick up any cards that became due mid-session
-    if (onGetNewlyDue) {
-      const seenKeys = new Set(next.map(c => `${c.bookIndex}:${c.chapter}`));
-      seenKeys.add(`${card.bookIndex}:${card.chapter}`);
-      const fresh = onGetNewlyDue().filter(c => !seenKeys.has(`${c.bookIndex}:${c.chapter}`));
-      if (fresh.length > 0) {
-        const failedStart = next.findIndex(c => c.failed);
-        if (sort === 'most-due-first' || failedStart === -1) next.push(...fresh);
-        else next.splice(failedStart, 0, ...fresh);
-      }
-    }
-
-    if (next.length === 0 || next.every(c => c.memory.dueDate > now && !c.failed)) {
+    if (next.length === 0) {
       onClose();
-    } else {
-      setQueue(next);
-      setFlipped(false);
-      setReadyForGrade(false);
+      return;
     }
+
+    const nowTs = new Date().toISOString();
+    const rawNext = next[0];
+    const nextWithPrompt = rawNext && !rawNext.promptMode ? assignPrompt(rawNext) : rawNext;
+    if (nextWithPrompt && nextWithPrompt !== rawNext) next[0] = nextWithPrompt;
+    const nextCard = rawNext && rawNext.memory.dueDate <= nowTs ? nextWithPrompt : null;
+
+    setQueue(next);
+    setCurrentCard(nextCard);
+    setFlipped(false);
+    setReadyForGrade(false);
   };
 
   handleGradeRef.current = handleGrade;
@@ -229,9 +264,66 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
     : 'bg-white border border-slate-200';
 
 
+  if (!card) {
+    // Waiting for failed card(s) to become due
+    const nextDueMs = queue.length > 0
+      ? Math.min(...queue.map(c => new Date(c.memory.dueDate).getTime()))
+      : null;
+    const secsLeft = nextDueMs ? Math.max(0, Math.ceil((nextDueMs - Date.now()) / 1000)) : null;
+    return (
+      <div className={`fixed inset-0 z-50 flex flex-col px-6 pb-8 ${panelClass}`} style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
+        <div className="flex items-center justify-between mb-6">
+          <span className={`text-xs font-medium ${isNight ? 'text-slate-400' : 'text-slate-500'}`}>0 remaining</span>
+          <button onClick={onClose}><X className={`w-5 h-5 ${isNight ? 'text-slate-400' : 'text-slate-500'}`} /></button>
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center gap-2">
+          <div className={`text-sm ${isNight ? 'text-slate-400' : 'text-slate-500'}`}>next card in</div>
+          <div className={`text-3xl font-bold tabular-nums ${isNight ? 'text-slate-200' : 'text-slate-700'}`}>
+            {secsLeft !== null ? `${secsLeft}s` : '…'}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+
+  const scrolledRef = useRef(false);
+
   const bookName = BIBLE_BOOKS[card.bookIndex].name;
   const theme = themes[card.bookIndex]?.[card.chapter] ?? '';
-  const remaining = queue.filter(c => !c.failed && c.memory.dueDate <= nowDisplay).length;
+  const remaining = queue.length;
+  const mode = card.promptMode ?? 'reference';
+
+  // Prompt face content
+  const promptFace = mode === 'theme' ? (
+    <>
+      <div className={`text-sm leading-relaxed ${isNight ? 'text-slate-200' : 'text-slate-700'}`}>{theme || 'No theme recorded'}</div>
+      <div className={`mt-3 text-xs ${isNight ? 'text-slate-500' : 'text-slate-400'}`}>What chapter is this?</div>
+    </>
+  ) : mode === 'verse' ? (
+    <>
+      <div className={`text-xs mb-2 ${isNight ? 'text-slate-500' : 'text-slate-400'}`}>v.{card.verseNum}</div>
+      <div className={`text-xs leading-relaxed italic ${isNight ? 'text-slate-200' : 'text-slate-700'}`}>"{card.verseText}"</div>
+      <div className={`mt-3 text-xs ${isNight ? 'text-slate-500' : 'text-slate-400'}`}>What chapter is this?</div>
+    </>
+  ) : (
+    <>
+      <div className={`text-2xl font-bold mb-1 ${isNight ? 'text-slate-100' : 'text-slate-800'}`}>{bookName}</div>
+      <div className={`text-lg ${isNight ? 'text-slate-400' : 'text-slate-500'}`}>Chapter {card.chapter}</div>
+    </>
+  );
+
+  // Answer face content
+  const answerFace = mode === 'reference' ? (
+    <div className={`mt-6 pt-6 border-t text-sm leading-relaxed ${isNight ? 'border-slate-700 text-slate-200' : 'border-slate-200 text-slate-700'}`}>
+      {theme || <span className={isNight ? 'text-slate-500' : 'text-slate-400'}>No theme recorded</span>}
+    </div>
+  ) : (
+    <div className={`mt-6 pt-6 border-t ${isNight ? 'border-slate-700' : 'border-slate-200'}`}>
+      <div className={`text-lg font-bold ${isNight ? 'text-slate-100' : 'text-slate-800'}`}>{bookName} {card.chapter}</div>
+      {theme && <div className={`mt-2 text-sm leading-relaxed ${isNight ? 'text-slate-300' : 'text-slate-600'}`}>{theme}</div>}
+    </div>
+  );
 
   return (
     <div className={`fixed inset-0 z-50 flex flex-col px-6 pb-8 ${panelClass}`} style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
@@ -248,30 +340,29 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
       {/* Card */}
       <div className="flex-1 flex flex-col items-center justify-center gap-6">
         <div
-          className={`w-full max-w-sm rounded-2xl p-8 text-center cursor-pointer select-none ${cardClass}`}
-          onClick={() => { if (!flipped) handleReveal(); }}
+          className={`w-full max-w-sm rounded-2xl p-8 text-center cursor-pointer select-none ${cardClass} ${mode === 'verse' ? 'max-h-72 overflow-y-auto' : ''}`}
+          onScroll={() => { scrolledRef.current = true; }}
+          onClick={() => {
+            if (flipped) return;
+            if (scrolledRef.current) { scrolledRef.current = false; return; }
+            handleReveal();
+          }}
         >
-          <div className={`text-2xl font-bold mb-1 ${isNight ? 'text-slate-100' : 'text-slate-800'}`}>
-            {bookName}
-          </div>
-          <div className={`text-lg ${isNight ? 'text-slate-400' : 'text-slate-500'}`}>
-            Chapter {card.chapter}
-          </div>
-
-          {flipped ? (
-            <div className={`mt-6 pt-6 border-t text-sm leading-relaxed ${isNight ? 'border-slate-700 text-slate-200' : 'border-slate-200 text-slate-700'}`}>
-              {theme || <span className={isNight ? 'text-slate-500' : 'text-slate-400'}>No theme recorded</span>}
-            </div>
-          ) : audioPhase === 'speaking-prompt' ? (
-            <div className={`mt-6 text-xs animate-pulse ${isNight ? 'text-slate-500' : 'text-slate-400'}`}>…</div>
-          ) : (
-            <div className={`mt-6 text-xs ${isNight ? 'text-slate-500' : 'text-slate-400'}`}>
-              {audioEnabled && !audioUnlocked ? 'tap to hear' : 'tap to reveal'}
-            </div>
+          {flipped ? answerFace : (
+            <>
+              {promptFace}
+              {audioPhase === 'speaking-prompt' ? (
+                <div className={`mt-4 text-xs animate-pulse ${isNight ? 'text-slate-500' : 'text-slate-400'}`}>…</div>
+              ) : (
+                <div className={`mt-4 text-xs ${isNight ? 'text-slate-500' : 'text-slate-400'}`}>
+                  {audioEnabled && !audioUnlocked ? 'tap to hear' : 'tap to reveal'}
+                </div>
+              )}
+            </>
           )}
         </div>
 
-        {/* Grade buttons — only shown after TTS finishes (readyForGrade) */}
+        {/* Grade buttons */}
         {(audioEnabled ? readyForGrade : flipped) && (
           <div className="flex flex-col items-center gap-3 w-full max-w-sm">
             {audioEnabled && listeningForGrade && (

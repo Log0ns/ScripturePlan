@@ -1,4 +1,4 @@
-export type StudySort = 'book-order' | 'random-books' | 'most-due-first';
+export type StudySort = 'book-order' | 'random-books-ordered' | 'random-books-random';
 
 export type BibleBook = {
   name: string;

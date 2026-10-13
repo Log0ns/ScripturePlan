@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import type { ThemeMemory, ThemeMemoryStore } from '../types';
+import type { StudySort } from '../types';
 import { MATURE_INTERVAL } from './srsConstants';
 
 const STORAGE_KEY = 'themeMemory';
@@ -54,6 +55,34 @@ export function memorizationPercent(memory: ThemeMemory | undefined): number {
   return Math.min(100, Math.max(0, Math.round((memory.interval / MATURE_INTERVAL) * 100)));
 }
 
+type StudyCard = { bookIndex: number; chapter: number; memory: ThemeMemory };
+
+function shuffle<T>(arr: T[]): T[] {
+  for (let k = arr.length - 1; k > 0; k--) {
+    const j = Math.floor(Math.random() * (k + 1));
+    [arr[k], arr[j]] = [arr[j], arr[k]];
+  }
+  return arr;
+}
+
+export function sortCards(cards: StudyCard[], sort: StudySort, initialSort = false): StudyCard[] {
+  const due    = cards.filter(c => isDue(c.memory.dueDate));
+  const notDue = cards.filter(c => !isDue(c.memory.dueDate) && c.memory.status !== 'new');
+  const unseen = cards.filter(c => c.memory.status === 'new');
+
+  due.sort((a, b) => a.memory.dueDate < b.memory.dueDate ? -1 : 1);
+  notDue.sort((a, b) => a.memory.dueDate < b.memory.dueDate ? -1 : 1);
+  shuffle(unseen);
+
+  // Only shuffle buckets on initial sort — preserve order on re-sort after grading
+  if (sort === 'random-books-random' && initialSort) {
+    shuffle(due);
+    shuffle(notDue);
+  }
+
+  return [...due, ...notDue, ...unseen];
+}
+
 export function useThemeMemory() {
   const [store, setStore] = useState<ThemeMemoryStore>(load);
 
@@ -79,34 +108,29 @@ export function useThemeMemory() {
 
   const getDueCards = useCallback(
     (bookIndex?: number, themes?: Record<number, Record<number, string>>): Array<{ bookIndex: number; chapter: number; memory: ThemeMemory }> => {
-      const results: Array<{ bookIndex: number; chapter: number; memory: ThemeMemory }> = [];
       const freshStore: ThemeMemoryStore = load();
 
+      const cards: Array<{ bookIndex: number; chapter: number; memory: ThemeMemory }> = [];
       const books = bookIndex !== undefined ? [bookIndex] : Object.keys(freshStore).map(Number);
       for (const b of books) {
         const chapters = freshStore[b];
         if (chapters) {
           for (const c of Object.keys(chapters).map(Number)) {
-            const mem = chapters[c];
-            if (isDue(mem.dueDate)) {
-              results.push({ bookIndex: b, chapter: c, memory: mem });
-            }
+            cards.push({ bookIndex: b, chapter: c, memory: chapters[c] });
           }
         }
         if (themes?.[b]) {
           for (const c of Object.keys(themes[b]).map(Number)) {
-            if (themes[b][c] && !chapters?.[c]) {
-              results.push({ bookIndex: b, chapter: c, memory: defaultMemory() });
+            if (themes[b][c]?.trim() && !chapters?.[c]) {
+              cards.push({ bookIndex: b, chapter: c, memory: defaultMemory() });
             }
           }
         }
       }
-
-      return results.sort((a, b) =>
-        a.bookIndex !== b.bookIndex ? a.bookIndex - b.bookIndex : a.chapter - b.chapter
-      );
+      // Return in neutral book/chapter order — caller applies sort via sortCards
+      return cards.sort((a, b) => a.bookIndex !== b.bookIndex ? a.bookIndex - b.bookIndex : a.chapter - b.chapter);
     },
-    [] // no dependency on store — reads fresh from localStorage each call
+    []
   );
 
   const clearMemory = useCallback(() => {

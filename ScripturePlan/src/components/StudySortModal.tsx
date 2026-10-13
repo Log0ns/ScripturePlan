@@ -10,9 +10,9 @@ type Props = {
 };
 
 const OPTIONS: { sort: StudySort; label: string; desc: string }[] = [
-  { sort: 'book-order',    label: 'Book Order',      desc: 'Genesis → Malachi / Matthew → Revelation' },
-  { sort: 'random-books',  label: 'Random Books',    desc: 'Books shuffled, chapters in order within each book' },
-  { sort: 'most-due-first', label: 'Most Due First', desc: 'Most overdue chapters first' },
+  { sort: 'book-order',          label: 'Book Order',          desc: 'Genesis → Malachi / Matthew → Revelation' },
+  { sort: 'random-books-ordered', label: 'Random Books',        desc: 'Books shuffled, chapters in order within each book' },
+  { sort: 'random-books-random',  label: 'Random Chapters',     desc: 'Random book, random due chapter each card' },
 ];
 
 export default function StudySortModal({ scope, timeOfDay, onSelect, onClose }: Props) {

@@ -5,7 +5,7 @@ import { BIBLE_BOOKS, DEFAULT_ICONS, READING_PLANS, MEMORY_CHUNKS, getTimeOfDay,
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useAuth } from './hooks/useAuth';
 import { useFirebaseSync } from './hooks/useFirebaseSync';
-import { useThemeMemory } from './hooks/useThemeMemory';
+import { useThemeMemory, sortCards } from './hooks/useThemeMemory';
 import { ReadingTile, PrayerTile, MemorizationTile, SettingsModal, GlobalSettingsModal, CustomTileSettings, ChapterReader, MemoryTileModal, GroupSwitcher, StudySortModal, BulkAddPrayerModal } from './components';
 import type { StudySort } from './components';
 
@@ -628,21 +628,20 @@ export default function Planny() {
           scope={pendingStudyScope}
           timeOfDay={timeOfDay}
           onSelect={(sort) => {
-            const scope = pendingStudyScope;
+            const scope = pendingStudyScope!;
             setPendingStudyScope(null);
-            const bookEntries = BIBLE_BOOKS
+            const bookIndices = BIBLE_BOOKS
               .map((b, i) => ({ b, i }))
-              .filter(({ b }) => b.testament === scope);
-            if (sort === 'random-books') {
-              for (let k = bookEntries.length - 1; k > 0; k--) {
+              .filter(({ b }) => b.testament === scope)
+              .map(({ i }) => i);
+            if (sort === 'random-books-ordered' || sort === 'random-books-random') {
+              for (let k = bookIndices.length - 1; k > 0; k--) {
                 const j = Math.floor(Math.random() * (k + 1));
-                [bookEntries[k], bookEntries[j]] = [bookEntries[j], bookEntries[k]];
+                [bookIndices[k], bookIndices[j]] = [bookIndices[j], bookIndices[k]];
               }
             }
-            let cards = bookEntries.flatMap(({ i }) => getDueCards(i, themes));
-            if (sort === 'most-due-first') {
-              cards = cards.slice().sort((a, b) => a.memory.dueDate < b.memory.dueDate ? -1 : a.memory.dueDate > b.memory.dueDate ? 1 : 0);
-            }
+            const raw = bookIndices.flatMap(i => getDueCards(i, themes));
+            const cards = sortCards(raw, sort, true);
             setSortedStudyCards(cards);
             setStudySort(sort);
             setStudyBookIndex(scope);
@@ -653,7 +652,7 @@ export default function Planny() {
 
       {studyBookIndex !== null && (() => {
         const cards = typeof studyBookIndex === 'number'
-          ? getDueCards(studyBookIndex, themes)
+          ? sortCards(getDueCards(studyBookIndex, themes), 'book-order', true)
           : (sortedStudyCards ?? []);
         return (
           <Suspense fallback={null}>
@@ -664,14 +663,6 @@ export default function Planny() {
             sort={studySort}
             audioEnabled={audioEnabled}
             onUpdateMemory={updateMemory}
-            onGetNewlyDue={() => {
-              if (typeof studyBookIndex === 'number') {
-                return getDueCards(studyBookIndex, themes);
-              }
-              return BIBLE_BOOKS.flatMap((b, i) =>
-                b.testament === studyBookIndex ? getDueCards(i, themes) : []
-              );
-            }}
             onClose={() => { setStudyBookIndex(null); setSortedStudyCards(null); setStudySort('book-order'); }}
           />
           </Suspense>
