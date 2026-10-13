@@ -47,7 +47,7 @@ export default function StudySortModal({ scope, timeOfDay, onSelect, onClose }: 
 
         <button
           onClick={() => setIncludeNotDue(v => !v)}
-          className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl border transition-colors ${row}`}
+          className={`w-full text-left flex items-center justify-between px-4 py-4 rounded-2xl border transition-colors ${row}`}
         >
           <div>
             <div className={`text-sm font-semibold mb-0.5 ${isNight ? 'text-slate-100' : 'text-slate-800'}`}>Include not-yet-due</div>
@@ -64,7 +64,7 @@ export default function StudySortModal({ scope, timeOfDay, onSelect, onClose }: 
 
         <button
           onClick={() => setStudiedOnly(v => !v)}
-          className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl border transition-colors ${row}`}
+          className={`w-full text-left flex items-center justify-between px-4 py-4 rounded-2xl border transition-colors ${row}`}
         >
           <div>
             <div className={`text-sm font-semibold mb-0.5 ${isNight ? 'text-slate-100' : 'text-slate-800'}`}>Previously studied only</div>
