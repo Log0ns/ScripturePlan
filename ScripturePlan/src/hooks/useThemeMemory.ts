@@ -70,8 +70,13 @@ export function sortCards(cards: StudyCard[], sort: StudySort, initialSort = fal
   const notDue = cards.filter(c => !isDue(c.memory.dueDate) && c.memory.status !== 'new');
   const unseen = cards.filter(c => c.memory.status === 'new');
 
-  due.sort((a, b) => a.memory.dueDate < b.memory.dueDate ? -1 : 1);
-  notDue.sort((a, b) => a.memory.dueDate < b.memory.dueDate ? -1 : 1);
+  if (sort === 'book-order') {
+    due.sort((a, b) => a.bookIndex !== b.bookIndex ? a.bookIndex - b.bookIndex : a.chapter - b.chapter);
+    notDue.sort((a, b) => a.bookIndex !== b.bookIndex ? a.bookIndex - b.bookIndex : a.chapter - b.chapter);
+  } else {
+    due.sort((a, b) => a.memory.dueDate < b.memory.dueDate ? -1 : 1);
+    notDue.sort((a, b) => a.memory.dueDate < b.memory.dueDate ? -1 : 1);
+  }
   shuffle(unseen);
 
   // Only shuffle buckets on initial sort — preserve order on re-sort after grading

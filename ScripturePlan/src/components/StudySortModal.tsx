@@ -30,8 +30,8 @@ export default function StudySortModal({ scope, timeOfDay, onSelect, onClose }: 
   const panel = isNight ? 'bg-slate-900/95 text-slate-100' : 'bg-white/95 text-slate-800';
   const row   = isNight ? 'bg-slate-800 hover:bg-slate-700 border-slate-700' : 'bg-white hover:bg-slate-50 border-slate-200';
   const selectClass = isNight
-    ? 'w-full pl-4 pr-10 py-3 rounded-2xl border border-slate-700 bg-slate-800 text-slate-100 text-sm font-semibold focus:outline-none'
-    : 'w-full pl-4 pr-10 py-3 rounded-2xl border border-slate-200 bg-white text-slate-800 text-sm font-semibold focus:outline-none';
+    ? 'w-full pl-4 pr-10 py-3 rounded-2xl border border-slate-700 bg-slate-800 text-slate-100 text-sm font-semibold focus:outline-none appearance-none'
+    : 'w-full pl-4 pr-10 py-3 rounded-2xl border border-slate-200 bg-white text-slate-800 text-sm font-semibold focus:outline-none appearance-none';
 
   const toggle = (key: string, val: boolean, set: (v: boolean) => void) => {
     set(val);
@@ -50,13 +50,18 @@ export default function StudySortModal({ scope, timeOfDay, onSelect, onClose }: 
       </div>
 
       <div className="space-y-3">
-        <select
-          value={sort}
-          onChange={e => { const v = e.target.value as StudySort; setSort(v); try { localStorage.setItem('study-sort', v); } catch {} }}
-          className={selectClass}
-        >
-          {OPTIONS.map(o => <option key={o.sort} value={o.sort}>{o.label}</option>)}
-        </select>
+        <div className="relative">
+          <select
+            value={sort}
+            onChange={e => { const v = e.target.value as StudySort; setSort(v); try { localStorage.setItem('study-sort', v); } catch {} }}
+            className={selectClass}
+          >
+            {OPTIONS.map(o => <option key={o.sort} value={o.sort}>{o.label}</option>)}
+          </select>
+          <svg className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isNight ? 'text-slate-400' : 'text-slate-500'}`} viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+          </svg>
+        </div>
 
         <button
           onClick={() => toggle('study-studied-only', !studiedOnly, setStudiedOnly)}
