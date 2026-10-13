@@ -67,7 +67,7 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
     const bookName = BIBLE_BOOKS[c.bookIndex].name;
     const verses = bibleRef.current?.[bookName]?.[String(c.chapter)] ?? [];
     const noVerse = sort !== 'random-books-random';
-    const mode = randomPromptMode(theme, !noVerse && verses.length > 0);
+    const mode = sort === 'book-order' ? 'reference' : randomPromptMode(theme, !noVerse && verses.length > 0);
     if (mode === 'verse' && verses.length > 0) {
       const v = verses[Math.floor(Math.random() * verses.length)];
       return { ...c, promptMode: mode, verseText: v.text, verseNum: v.verse };
