@@ -11,10 +11,10 @@ type Card = { bookIndex: number; chapter: number; memory: ThemeMemory; promptMod
 type BibleData = Record<string, Record<string, { verse: number; text: string }[]>>;
 
 function randomPromptMode(theme: string, hasVerses: boolean): PromptMode {
-  const modes: PromptMode[] = ['reference'];
-  if (theme) modes.push('theme');
-  if (hasVerses) modes.push('verse');
-  return modes[Math.floor(Math.random() * modes.length)];
+  const pool: PromptMode[] = ['reference', 'reference', 'reference'];
+  if (theme) pool.push('theme');
+  if (hasVerses) pool.push('verse');
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
 type Props = {
