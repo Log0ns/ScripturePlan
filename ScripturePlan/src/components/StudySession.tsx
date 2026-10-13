@@ -52,7 +52,8 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
   const [audioUnlocked, setAudioUnlocked] = useState(false);
   const readyListenStopRef = useRef<(() => void) | null>(null);
   const gradeListenStopRef = useRef<(() => void) | null>(null);
-  const scrolledRef = useRef(false);
+  const dragRef = useRef(false);
+  const pointerDownPos = useRef<{ x: number; y: number } | null>(null);
   const { speak, listen, cancel } = useAudio();
 
   const bibleRef = useRef<BibleData | null>(null);
@@ -383,10 +384,16 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
       <div className="flex-1 flex flex-col items-center justify-center gap-6">
         <div
           className={`w-full max-w-sm rounded-2xl p-8 text-center cursor-pointer select-none ${cardClass} ${mode === 'verse' ? 'max-h-72 overflow-y-auto' : ''}`}
-          onScroll={() => { scrolledRef.current = true; }}
+          onPointerDown={(e) => { dragRef.current = false; pointerDownPos.current = { x: e.clientX, y: e.clientY }; }}
+          onPointerMove={(e) => {
+            if (!pointerDownPos.current) return;
+            const dx = e.clientX - pointerDownPos.current.x;
+            const dy = e.clientY - pointerDownPos.current.y;
+            if (Math.abs(dx) > 5 || Math.abs(dy) > 5) dragRef.current = true;
+          }}
+          onPointerUp={() => { pointerDownPos.current = null; }}
           onClick={() => {
-            if (flipped) return;
-            if (scrolledRef.current) { scrolledRef.current = false; return; }
+            if (flipped || dragRef.current) return;
             handleReveal();
           }}
         >

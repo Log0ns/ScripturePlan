@@ -30,8 +30,8 @@ export default function StudySortModal({ scope, timeOfDay, onSelect, onClose }: 
   const panel = isNight ? 'bg-slate-900/95 text-slate-100' : 'bg-white/95 text-slate-800';
   const row   = isNight ? 'bg-slate-800 hover:bg-slate-700 border-slate-700' : 'bg-white hover:bg-slate-50 border-slate-200';
   const selectClass = isNight
-    ? 'w-full px-4 py-3 rounded-2xl border border-slate-700 bg-slate-800 text-slate-100 text-sm font-semibold focus:outline-none'
-    : 'w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white text-slate-800 text-sm font-semibold focus:outline-none';
+    ? 'w-full pl-4 pr-10 py-3 rounded-2xl border border-slate-700 bg-slate-800 text-slate-100 text-sm font-semibold focus:outline-none'
+    : 'w-full pl-4 pr-10 py-3 rounded-2xl border border-slate-200 bg-white text-slate-800 text-sm font-semibold focus:outline-none';
 
   const toggle = (key: string, val: boolean, set: (v: boolean) => void) => {
     set(val);
