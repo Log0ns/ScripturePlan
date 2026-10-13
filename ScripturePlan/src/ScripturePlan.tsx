@@ -5,7 +5,7 @@ import { BIBLE_BOOKS, DEFAULT_ICONS, READING_PLANS, MEMORY_CHUNKS, getTimeOfDay,
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useAuth } from './hooks/useAuth';
 import { useFirebaseSync } from './hooks/useFirebaseSync';
-import { useThemeMemory, sortCards } from './hooks/useThemeMemory';
+import { useThemeMemory, sortCards, isDue } from './hooks/useThemeMemory';
 import { ReadingTile, PrayerTile, MemorizationTile, SettingsModal, GlobalSettingsModal, CustomTileSettings, ChapterReader, MemoryTileModal, GroupSwitcher, StudySortModal, BulkAddPrayerModal } from './components';
 import type { StudySort } from './components';
 
@@ -627,7 +627,7 @@ export default function Planny() {
         <StudySortModal
           scope={pendingStudyScope}
           timeOfDay={timeOfDay}
-          onSelect={(sort) => {
+          onSelect={(sort, includeNotDue, studiedOnly) => {
             const scope = pendingStudyScope!;
             setPendingStudyScope(null);
             const bookIndices = BIBLE_BOOKS
@@ -640,7 +640,10 @@ export default function Planny() {
                 [bookIndices[k], bookIndices[j]] = [bookIndices[j], bookIndices[k]];
               }
             }
-            const raw = bookIndices.flatMap(i => getDueCards(i, themes));
+            let raw = bookIndices.flatMap(i => getDueCards(i, themes));
+            raw = raw.filter(c => themes[c.bookIndex]?.[c.chapter]?.trim());
+            if (studiedOnly) raw = raw.filter(c => c.memory.status !== 'new');
+            if (!includeNotDue) raw = raw.filter(c => c.memory.status === 'new' || isDue(c.memory.dueDate));
             const cards = sortCards(raw, sort, true);
             setSortedStudyCards(cards);
             setStudySort(sort);
@@ -652,7 +655,7 @@ export default function Planny() {
 
       {studyBookIndex !== null && (() => {
         const cards = typeof studyBookIndex === 'number'
-          ? sortCards(getDueCards(studyBookIndex, themes), 'book-order', true)
+          ? sortCards(getDueCards(studyBookIndex, themes).filter(c => themes[c.bookIndex]?.[c.chapter]?.trim()), 'book-order', true)
           : (sortedStudyCards ?? []);
         return (
           <Suspense fallback={null}>

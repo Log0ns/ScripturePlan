@@ -231,7 +231,9 @@ export default function ThemesTab({ themes, timeOfDay, onChange, initialView, me
 
         {onResetMemory && memoryStore?.[view.bookIndex]?.[view.chapter] && (
           <button
-            onClick={() => onResetMemory(view.bookIndex, view.chapter)}
+            onClick={() => {
+              if (window.confirm('Reset memorization for this chapter?')) onResetMemory(view.bookIndex, view.chapter);
+            }}
             className={`mt-2 text-xs px-3 py-1.5 rounded-lg transition-colors ${
               isNight ? 'text-slate-500 hover:text-red-400 hover:bg-slate-800' : 'text-slate-400 hover:text-red-500 hover:bg-slate-100'
             }`}
@@ -277,15 +279,17 @@ export default function ThemesTab({ themes, timeOfDay, onChange, initialView, me
             {onResetMemory && hasBookMemory && (
                 <button
                   onClick={() => {
-                    for (let ch = 1; ch <= book.chapters; ch++) {
-                      if (memoryStore?.[view.bookIndex]?.[ch]) onResetMemory(view.bookIndex, ch);
+                    if (window.confirm(`Reset memorization for all chapters in ${book.name}?`)) {
+                      for (let ch = 1; ch <= book.chapters; ch++) {
+                        if (memoryStore?.[view.bookIndex]?.[ch]) onResetMemory(view.bookIndex, ch);
+                      }
                     }
                   }}
                   className={`text-xs px-2 py-1 rounded-lg transition-colors ${
                     isNight ? 'text-slate-500 hover:text-red-400 hover:bg-slate-800' : 'text-slate-400 hover:text-red-500 hover:bg-slate-100'
                   }`}
                 >
-                  Reset
+                  Reset memorization
                 </button>
               )}
           </div>

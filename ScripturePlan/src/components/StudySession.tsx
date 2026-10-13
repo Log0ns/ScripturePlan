@@ -51,6 +51,7 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
   const [audioUnlocked, setAudioUnlocked] = useState(false);
   const readyListenStopRef = useRef<(() => void) | null>(null);
   const gradeListenStopRef = useRef<(() => void) | null>(null);
+  const scrolledRef = useRef(false);
   const { speak, listen, cancel } = useAudio();
 
   const bibleRef = useRef<BibleData | null>(null);
@@ -73,9 +74,26 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
 
   useEffect(() => {
     if (!audioEnabled) return;
-    const onVisible = () => { if (document.visibilityState === 'visible') window.speechSynthesis.resume(); };
+    let wakeLock: any = null;
+    const acquire = () => {
+      if ('wakeLock' in navigator) {
+        (navigator as any).wakeLock.request('screen')
+          .then((wl: any) => { wakeLock = wl; })
+          .catch(() => {});
+      }
+    };
+    acquire();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        window.speechSynthesis.resume();
+        acquire();
+      }
+    };
     document.addEventListener('visibilitychange', onVisible);
-    return () => document.removeEventListener('visibilitychange', onVisible);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      wakeLock?.release().catch(() => {});
+    };
   }, [audioEnabled]);
 
   useEffect(() => {
@@ -286,8 +304,6 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
     );
   }
 
-
-  const scrolledRef = useRef(false);
 
   const bookName = BIBLE_BOOKS[card.bookIndex].name;
   const theme = themes[card.bookIndex]?.[card.chapter] ?? '';
