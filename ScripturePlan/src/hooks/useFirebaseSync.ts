@@ -36,6 +36,7 @@ export function useFirebaseSync(
   callbacks: SyncCallbacks
 ) {
   const readyToPush = useRef(false);
+  const pullCompletedOnce = useRef(false);
   const pendingPushRef = useRef(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dataRef = useRef(data);
@@ -166,6 +167,7 @@ export function useFirebaseSync(
         if (srsDocs.size > 0) callbacks.setThemeMemoryStore(srsStore);
 
         readyToPush.current = true;
+        pullCompletedOnce.current = true;
         if (pendingPushRef.current) {
           pendingPushRef.current = false;
           doPush();
@@ -173,6 +175,7 @@ export function useFirebaseSync(
       }).catch(err => {
         console.error(err);
         readyToPush.current = true;
+        pullCompletedOnce.current = true;
         if (pendingPushRef.current) {
           pendingPushRef.current = false;
           doPush();
@@ -189,6 +192,12 @@ export function useFirebaseSync(
     if (!uid) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
+      if (!pullCompletedOnce.current) {
+        // Pull hasn't finished yet — queue the push so it fires after
+        pendingPushRef.current = true;
+        debounceRef.current = null;
+        return;
+      }
       if (!readyToPush.current) {
         pendingPushRef.current = true;
       } else {
