@@ -11,7 +11,7 @@ type Card = { bookIndex: number; chapter: number; memory: ThemeMemory; promptMod
 type BibleData = Record<string, Record<string, { verse: number; text: string }[]>>;
 
 function randomPromptMode(theme: string, hasVerses: boolean): PromptMode {
-  const pool: PromptMode[] = ['reference', 'reference', 'reference'];
+  const pool: PromptMode[] = ['reference', 'reference', 'reference', 'reference'];
   if (theme) pool.push('theme');
   if (hasVerses) pool.push('verse');
   return pool[Math.floor(Math.random() * pool.length)];
@@ -381,7 +381,7 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
       </div>
 
       {/* Card */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-6">
+      <div className="flex-1 flex flex-col items-center justify-center gap-6 overflow-y-auto">
         <div
           className={`w-full max-w-sm rounded-2xl p-8 text-center cursor-pointer select-none ${cardClass} ${mode === 'verse' ? 'max-h-72 overflow-y-auto' : ''}`}
           onPointerDown={(e) => { dragRef.current = false; pointerDownPos.current = { x: e.clientX, y: e.clientY }; }}
