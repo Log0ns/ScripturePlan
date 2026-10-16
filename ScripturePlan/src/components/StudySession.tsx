@@ -309,7 +309,7 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
     const nextDueMs = queue.length > 0
       ? Math.min(...queue.map(c => new Date(c.memory.dueDate).getTime()))
       : null;
-    const secsLeft = nextDueMs ? Math.max(0, Math.ceil((nextDueMs - Date.now()) / 1000)) : null;
+    const formatTimeLeft = (ms: number): string => { const s = Math.max(0, Math.ceil(ms/1000)); if (s < 60) return s+"s"; const m = Math.ceil(ms/60000); if (m < 60) return m+"m"; const h = Math.ceil(ms/3600000); if (h < 24) return h+"h"; const d = Math.floor(ms/86400000); const rh = Math.ceil((ms%86400000)/3600000); return rh > 0 ? d+"d "+rh+"h" : d+"d"; }; const timeLeft = nextDueMs != null ? formatTimeLeft(nextDueMs - Date.now()) : null;
     return (
       <div className={`fixed inset-0 z-50 flex flex-col px-6 pb-8 ${panelClass}`} style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
         <div className="flex items-center justify-between mb-6">
@@ -317,10 +317,14 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
           <button onClick={onClose}><X className={`w-5 h-5 ${isNight ? 'text-slate-400' : 'text-slate-500'}`} /></button>
         </div>
         <div className="flex-1 flex flex-col items-center justify-center gap-2">
-          <div className={`text-sm ${isNight ? 'text-slate-400' : 'text-slate-500'}`}>next card in</div>
-          <div className={`text-3xl font-bold tabular-nums ${isNight ? 'text-slate-200' : 'text-slate-700'}`}>
-            {secsLeft !== null ? `${secsLeft}s` : '…'}
-          </div>
+          {timeLeft != null ? (
+            <>
+              <div className={`text-sm ${isNight ? 'text-slate-400' : 'text-slate-500'}`}>next card in</div>
+              <div className={`text-3xl font-bold tabular-nums ${isNight ? 'text-slate-200' : 'text-slate-700'}`}>{timeLeft}</div>
+            </>
+          ) : (
+            <div className={`text-sm ${isNight ? 'text-slate-400' : 'text-slate-500'}`}>no cards due</div>
+          )}
         </div>
       </div>
     );
