@@ -38,6 +38,7 @@ export function useFirebaseSync(
   const readyToPush = useRef(false);
   const pullCompletedOnce = useRef(false);
   const pendingPushRef = useRef(false);
+  const pullVersionRef = useRef(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dataRef = useRef(data);
   dataRef.current = data;
@@ -100,6 +101,7 @@ export function useFirebaseSync(
 
     const pull = () => {
       readyToPush.current = false;
+      pullVersionRef.current++;
       const ref = doc(db, 'users', uid);
       // Pull main doc and SRS subcollection in parallel
       Promise.all([
@@ -191,9 +193,10 @@ export function useFirebaseSync(
   useEffect(() => {
     if (!uid) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
+    const versionAtSchedule = pullVersionRef.current;
     debounceRef.current = setTimeout(() => {
+      if (pullVersionRef.current !== versionAtSchedule) { debounceRef.current = null; return; }
       if (!pullCompletedOnce.current) {
-        // Pull hasn't finished yet — queue the push so it fires after
         pendingPushRef.current = true;
         debounceRef.current = null;
         return;
@@ -211,6 +214,7 @@ export function useFirebaseSync(
   useEffect(() => {
     const flush = () => {
       if (!uid) return;
+      if (!readyToPush.current) return;
       if (debounceRef.current) { clearTimeout(debounceRef.current); debounceRef.current = null; }
       doPush();
     };
