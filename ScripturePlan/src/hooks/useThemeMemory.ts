@@ -85,7 +85,7 @@ export function sortCards(cards: StudyCard[], sort: StudySort, initialSort = fal
     shuffle(notDue);
   }
 
-  return [...due, ...notDue, ...unseen];
+  return [...due, ...unseen, ...notDue];
 }
 
 export function useThemeMemory() {
