@@ -222,4 +222,13 @@ export function useFirebaseSync(
     window.addEventListener('beforeunload', flush);
     return () => window.removeEventListener('beforeunload', flush);
   }, [uid, doPush]);
+
+  const pushNow = useCallback(() => {
+    if (!uid) return;
+    if (!readyToPush.current) { pendingPushRef.current = true; return; }
+    if (debounceRef.current) { clearTimeout(debounceRef.current); debounceRef.current = null; }
+    doPush();
+  }, [uid, doPush]);
+
+  return { pushNow };
 }

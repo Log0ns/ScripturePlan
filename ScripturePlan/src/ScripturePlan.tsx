@@ -53,7 +53,7 @@ export default function Planny() {
   const { store: memoryStore, updateMemory, getDueCards, clearMemory, resetMemory, setThemeMemoryStore } = useThemeMemory();
 
   const syncData = useMemo(() => ({ iconGroups, activeGroupId, customTiles, memoryTiles, themes, completedChunks, daysCompleted, lastResetDate, themeMemoryStore: memoryStore }), [iconGroups, activeGroupId, customTiles, memoryTiles, themes, completedChunks, daysCompleted, lastResetDate, memoryStore]);
-  useFirebaseSync(user, syncData, { setIconGroups, setActiveGroupId, setCustomTiles, setMemoryTiles, setThemes, setCompletedChunks, setDaysCompleted, setLastResetDate, setThemeMemoryStore });
+  const { pushNow } = useFirebaseSync(user, syncData, { setIconGroups, setActiveGroupId, setCustomTiles, setMemoryTiles, setThemes, setCompletedChunks, setDaysCompleted, setLastResetDate, setThemeMemoryStore });
 
   const activeGroup = iconGroups.find(g => g.id === activeGroupId) ?? iconGroups[0];
   const icons = activeGroup?.icons ?? [];
@@ -531,7 +531,7 @@ export default function Planny() {
                 if (typeof scope === 'number') { setStudyBookIndex(scope); }
                 else { setPendingStudyScope(scope); }
               }}
-              onResetMemory={resetMemory}
+              onResetMemory={(bookIndex, chapter) => { resetMemory(bookIndex, chapter); pushNow(); }}
               onSetMemory={updateMemory}
               initialView={themeTarget ? { kind: 'editor', bookIndex: themeTarget.bookIndex, chapter: themeTarget.chapter } : undefined}
             />
