@@ -86,7 +86,10 @@ export function useFirebaseSync(
   const doPush = useCallback(() => {
     const now = Date.now();
     persistSyncTime(now);
-    const { themeMemoryStore, ...mainData } = dataRef.current;
+    const { themeMemoryStore: _ignored, ...mainData } = dataRef.current;
+    // Read SRS store fresh from localStorage so beforeunload flush captures synchronous saves
+    let themeMemoryStore: ThemeMemoryStore;
+    try { themeMemoryStore = JSON.parse(localStorage.getItem('themeMemory') ?? '{}'); } catch { themeMemoryStore = {}; }
     const ref = doc(db, 'users', user!.uid);
     setDoc(ref, { ...mainData, lastModified: now }, { merge: true }).catch(console.error);
     pushSRS(themeMemoryStore, remoteSRSIds.current);
