@@ -149,6 +149,7 @@ export function useFirebaseSync(
               callbacks.setDaysCompleted(remote.daysCompleted);
               callbacks.setLastResetDate(remote.lastResetDate);
             }
+            callbacks.setThemeMemoryStore(srsStore);
           } else {
             const today = new Date().toDateString();
             const localResetDate = dataRef.current.lastResetDate;
@@ -165,9 +166,6 @@ export function useFirebaseSync(
             }
           }
         }
-        // Always apply SRS store if subcollection had data
-        if (snap.exists()) callbacks.setThemeMemoryStore(srsStore);
-
         readyToPush.current = true;
         pullCompletedOnce.current = true;
         if (pendingPushRef.current) {
