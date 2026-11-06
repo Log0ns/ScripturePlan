@@ -368,6 +368,53 @@ export default function Planny() {
   };
 
 
+  const importThemes = (md: string) => {
+    const bookNameToIndex = new Map(BIBLE_BOOKS.map((b, i) => [b.name.toLowerCase(), i]));
+    const imported: Themes = {};
+    let currentBook = -1;
+    let currentChapter = -1;
+    let lines: string[] = [];
+
+    const flush = () => {
+      if (currentBook >= 0 && currentChapter >= 0) {
+        const text = lines.join('\n').trim();
+        if (text) {
+          if (!imported[currentBook]) imported[currentBook] = {};
+          imported[currentBook][currentChapter] = text;
+        }
+      }
+      lines = [];
+    };
+
+    for (const line of md.split('\n')) {
+      const bookMatch = line.match(/^#\s+(.+)$/);
+      const chapterMatch = line.match(/^##\s+Chapter\s+(\d+)$/);
+      if (bookMatch && !chapterMatch) {
+        flush();
+        currentBook = bookNameToIndex.get(bookMatch[1].trim().toLowerCase()) ?? -1;
+        currentChapter = -1;
+      } else if (chapterMatch && currentBook >= 0) {
+        flush();
+        currentChapter = parseInt(chapterMatch[1], 10);
+      } else {
+        lines.push(line);
+      }
+    }
+    flush();
+
+    if (Object.keys(imported).length === 0) { alert('No themes found in file.'); return; }
+    const conflictCount = Object.entries(imported).reduce((sum, [bi, chs]) =>
+      sum + Object.keys(chs).filter(ch => themes[Number(bi)]?.[Number(ch)]).length, 0);
+    if (conflictCount > 0 && !window.confirm(`This will overwrite ${conflictCount} existing theme${conflictCount !== 1 ? 's' : ''}. Continue?`)) return;
+    setThemes(prev => {
+      const next = { ...prev };
+      for (const [bi, chs] of Object.entries(imported)) {
+        next[Number(bi)] = { ...prev[Number(bi)], ...chs };
+      }
+      return next;
+    });
+  };
+
   const exportThemes = () => {
     const lines: string[] = ['# Bible Chapter Themes', ''];
     for (let bi = 0; bi < BIBLE_BOOKS.length; bi++) {
@@ -485,6 +532,7 @@ export default function Planny() {
                 else { setPendingStudyScope(scope); }
               }}
               onResetMemory={resetMemory}
+              onSetMemory={updateMemory}
               initialView={themeTarget ? { kind: 'editor', bookIndex: themeTarget.bookIndex, chapter: themeTarget.chapter } : undefined}
             />
           )}
@@ -556,6 +604,7 @@ export default function Planny() {
           onClearSRSProgress={clearMemory}
           onClearPrayerTiles={() => setCustomTiles(prev => prev.map(t => ({ ...t, items: [], index: 0 })))}
           onExportThemes={exportThemes}
+          onImportThemes={importThemes}
           onClearThemes={() => {
             if (themeDebounceRef.current) { clearTimeout(themeDebounceRef.current); themeDebounceRef.current = null; }
             pendingThemeRef.current = null;

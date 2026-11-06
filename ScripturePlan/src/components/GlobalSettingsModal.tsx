@@ -13,6 +13,7 @@ type Props = {
   onClearSRSProgress: () => void;
   onClearPrayerTiles: () => void;
   onExportThemes: () => void;
+  onImportThemes: (md: string) => void;
   openOnTap: boolean;
   onToggleOpenOnTap: () => void;
   themeOnTap: boolean;
@@ -22,7 +23,7 @@ type Props = {
 
 const selectClass = "w-full p-3 border border-slate-600 rounded-xl bg-slate-700 text-slate-100 focus:outline-none focus:border-amber-500";
 
-export default function GlobalSettingsModal({ user, onSignIn, onSignOut, onApplyPlan, onResetDayCounter, onClearMemoryProgress, onClearThemes, onClearSRSProgress, onClearPrayerTiles, onExportThemes, openOnTap, onToggleOpenOnTap, themeOnTap, onToggleThemeOnTap, onClose }: Props) {
+export default function GlobalSettingsModal({ user, onSignIn, onSignOut, onApplyPlan, onResetDayCounter, onClearMemoryProgress, onClearThemes, onClearSRSProgress, onClearPrayerTiles, onExportThemes, onImportThemes, openOnTap, onToggleOpenOnTap, themeOnTap, onToggleThemeOnTap, onClose }: Props) {
   const [selectedPlan, setSelectedPlan] = useState('Default');
   const [confirming, setConfirming] = useState<string | null>(null);
 
@@ -137,10 +138,21 @@ export default function GlobalSettingsModal({ user, onSignIn, onSignOut, onApply
         {/* Divider */}
         <div className="h-px bg-slate-700 my-6" />
 
-        {/* Export */}
+        {/* Export / Import */}
         <div className="mb-6">
-          <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3 block">Export</label>
+          <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3 block">Themes</label>
           <button onClick={onExportThemes} className={normalBtn}>Export Themes to Markdown</button>
+          <label className={`mt-3 ${normalBtn} block text-center cursor-pointer`}>
+            Import Themes from Markdown
+            <input type="file" accept=".md" className="hidden" onChange={e => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              e.target.value = '';
+              const reader = new FileReader();
+              reader.onload = ev => { const text = ev.target?.result; if (typeof text === 'string') onImportThemes(text); };
+              reader.readAsText(file);
+            }} />
+          </label>
         </div>
 
         {/* Divider */}

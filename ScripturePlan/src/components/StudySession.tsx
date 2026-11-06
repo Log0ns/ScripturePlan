@@ -313,7 +313,7 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
     return (
       <div className={`fixed inset-0 z-50 flex flex-col px-6 pb-8 ${panelClass}`} style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
         <div className="flex items-center justify-between mb-6">
-          <span className={`text-xs font-medium ${isNight ? 'text-slate-400' : 'text-slate-500'}`}>0 remaining</span>
+          <span className={`text-xs font-medium ${isNight ? 'text-slate-400' : 'text-slate-500'}`}>{queue.length} remaining</span>
           <button onClick={onClose}><X className={`w-5 h-5 ${isNight ? 'text-slate-400' : 'text-slate-500'}`} /></button>
         </div>
         <div className="flex-1 flex flex-col items-center justify-center gap-2">
@@ -333,7 +333,8 @@ export default function StudySession({ cards: initialCards, themes: initialTheme
 
   const bookName = BIBLE_BOOKS[card.bookIndex].name;
   const theme = themes[card.bookIndex]?.[card.chapter] ?? '';
-  const remaining = queue.length;
+  const nowTs = new Date().toISOString();
+  const remaining = queue.filter((c, i) => i === 0 || c.memory.dueDate <= nowTs || c.memory.status === 'new').length - 1;
 
   // Prompt face content
   const promptFace = mode === 'theme' ? (

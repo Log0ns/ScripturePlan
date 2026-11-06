@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDown, ChevronRight, ChevronLeft, ArrowLeft, Mic, MicOff, BookOpenCheck, Volume2, VolumeX } from 'lucide-react';
-import { TimeOfDay, Themes, ThemeMemoryStore } from '../types';
+import { TimeOfDay, Themes, ThemeMemoryStore, ThemeMemory } from '../types';
 import { BIBLE_BOOKS, getFilledStyle } from '../constants';
-import { memorizationPercent, isDue as isMemDue, nextDueLabel } from '../hooks/useThemeMemory';
+import { memorizationPercent, isDue as isMemDue, nextDueLabel, MATURE_INTERVAL } from '../hooks/useThemeMemory';
 
 const MAX_CHARS = 350;
 
@@ -14,6 +14,7 @@ type Props = {
   memoryStore?: ThemeMemoryStore;
   onStudy?: (scope: number | 'OT' | 'NT') => void;
   onResetMemory?: (bookIndex: number, chapter: number) => void;
+  onSetMemory?: (bookIndex: number, chapter: number, memory: ThemeMemory) => void;
   audioEnabled?: boolean;
   onToggleAudio?: () => void;
 };
@@ -52,7 +53,7 @@ const FILL_COLORS: Record<TimeOfDay, string> = {
   night:     'rgba(251,191,36,0.45)',
 };
 
-export default function ThemesTab({ themes, timeOfDay, onChange, initialView, memoryStore, onStudy, onResetMemory, audioEnabled, onToggleAudio }: Props) {
+export default function ThemesTab({ themes, timeOfDay, onChange, initialView, memoryStore, onStudy, onResetMemory, onSetMemory, audioEnabled, onToggleAudio }: Props) {
   const [view, setView] = useState<View>(initialView ?? { kind: 'list' });
   const [otOpen, setOtOpen] = useState(() => {
     try { return localStorage.getItem('themes-ot-open') === 'true'; } catch { return false; }
@@ -240,6 +241,39 @@ export default function ThemesTab({ themes, timeOfDay, onChange, initialView, me
           >
             Reset memorization
           </button>
+        )}
+
+        {onSetMemory && themes[view.bookIndex]?.[view.chapter] && (
+          <div className={`mt-2 flex items-center gap-2`}>
+            <span className={`text-xs ${isNight ? 'text-slate-500' : 'text-slate-400'}`}>Set level:</span>
+            {([
+              { label: 'Familiar', interval: 3, status: 'review' },
+              { label: 'Known',    interval: 7, status: 'review' },
+              { label: 'Mature',   interval: MATURE_INTERVAL, status: 'mature' },
+            ] as { label: string; interval: number; status: ThemeMemory['status'] }[]).map(({ label, interval, status }) => (
+              <button
+                key={label}
+                onClick={() => {
+                  const d = new Date();
+                  d.setDate(d.getDate() + interval);
+                  d.setHours(0, 0, 0, 0);
+                  onSetMemory(view.bookIndex, view.chapter, {
+                    interval,
+                    easeFactor: 2.5,
+                    dueDate: d.toISOString().slice(0, 10),
+                    repetitions: 1,
+                    lapses: 0,
+                    status,
+                  });
+                }}
+                className={`text-xs px-2 py-1 rounded-lg transition-colors ${
+                  isNight ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         )}
       </div>
     );
